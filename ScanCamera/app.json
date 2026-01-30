@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "CameraScanner",
+    "slug": "CameraScanner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow camera access to scan visiting cards"
+        }
+      ]
+    ],
+    "android": {
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.CameraScanner"
+    }
+  }
+}
