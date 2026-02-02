@@ -127,9 +127,8 @@ export default function ScanScreen({ navigation }) {
 
       const wordCount = line.split(" ").length;
       if (wordCount <= 4) {
-        // likely a person name
         name = line;
-        break; // stop at first valid name
+        break; 
       }
     }
 
@@ -195,6 +194,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     alignItems: "center",
+    
   },
   scanFrame: {
     width: 330,

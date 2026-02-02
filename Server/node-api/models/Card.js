@@ -6,6 +6,7 @@ const cardSchema = new mongoose.Schema({
   company: String,
   email: String,
   phone: String,
+  note: String,
   createdAt: {
     type: Date,
     default: Date.now

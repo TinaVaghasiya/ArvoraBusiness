@@ -11,7 +11,8 @@ router.post("/save-card", async (req, res) => {
       name,
       company,
       email,
-      phone
+      phone,
+      note
     });
 
     await newCard.save();

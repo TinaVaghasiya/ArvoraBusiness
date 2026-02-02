@@ -25,7 +25,7 @@ export default function ResultScreen({ route, navigation }) {
 
   const handleSave = async () => {
     try {
-      const response = await fetch("http://192.168.29.89:5000/api/cards/save-card", {
+      const response = await fetch("http://192.168.29.89:3000/api/cards/save-card", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,7 +42,10 @@ export default function ResultScreen({ route, navigation }) {
 
       if (data.success) {
         Alert.alert("Saved!", "Card stored in database successfully");
-        navigation.goBack();
+        setName("");
+        setCompany("");
+        setEmail("");
+        setPhone("");
       } else {
         Alert.alert("Error", "Failed to save card");
       }
