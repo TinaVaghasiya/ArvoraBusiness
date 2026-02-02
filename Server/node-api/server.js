@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
   res.send("🚀 Visiting Card API is running");
 });
 
-const PORT = 3000;
+const PORT = 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`🔥 Server running on http://192.168.29.89:${PORT}`);

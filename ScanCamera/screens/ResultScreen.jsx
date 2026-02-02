@@ -22,10 +22,11 @@ export default function ResultScreen({ route, navigation }) {
   const [company, setCompany] = useState(scannedCompany);
   const [email, setEmail] = useState(scannedEmail);
   const [phone, setPhone] = useState(scannedPhone);
+  const [note, setNote] = useState("");
 
   const handleSave = async () => {
     try {
-      const response = await fetch("http://192.168.29.89:3000/api/cards/save-card", {
+      const response = await fetch("http://192.168.29.89:5000/api/cards/save-card", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,6 +48,7 @@ export default function ResultScreen({ route, navigation }) {
         setCompany("");
         setEmail("");
         setPhone("");
+        setNote("");
       } else {
         Alert.alert("Error", "Failed to save card");
       }
@@ -57,8 +59,8 @@ export default function ResultScreen({ route, navigation }) {
 
   return (
     <KeyboardAvoidingView 
-    style={{ flex: 1 }} 
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    style={{ flex: 1 , backgroundColor: '#fcfcfc'}} 
+    behavior="padding"
   >
     <ScrollView 
     contentContainerStyle={styles.container} 
@@ -98,9 +100,13 @@ export default function ResultScreen({ route, navigation }) {
         keyboardType="phone-pad"
       />
 
-      <Text style={styles.label}>Note (optional)</Text>
+      <Text style={styles.label}>Note 
+        <Text style={{fontWeight: '400', color: '#5a5656', fontSize: 14}}> (Optional)</Text>
+      </Text>
       <TextInput
         style={styles.inputbox}
+        value={note}
+        onChangeText={setNote}
         placeholder="Enter Note"
       />
       <TouchableOpacity style={styles.button} onPress={handleSave}>
@@ -115,8 +121,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingTop: 40,
-    backgroundColor: "#fcfcfc",
-    height: "100%",
+    flexGrow: 1,
   },
   title: {
     fontSize: 22,

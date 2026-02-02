@@ -1,18 +1,17 @@
-// routes/cardRoutes.js
 const express = require("express");
 const router = express.Router();
 const Card = require("../models/Card");
 
 router.post("/save-card", async (req, res) => {
   try {
-    const { name, company, email, phone } = req.body;
-    console.log("📥 Incoming data:", req.body);
+    const { name, company, email, phone, note } = req.body;
+    console.log("Incoming data:", req.body);
     const newCard = new Card({
       name,
       company,
       email,
       phone,
-      note
+      note,
     });
 
     await newCard.save();
