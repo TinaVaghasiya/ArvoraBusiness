@@ -235,6 +235,6 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  button: { backgroundColor: "#00ff00", padding: 15, borderRadius: 10 },
-  buttonText: { fontWeight: "bold", fontSize: 16, color: "#000" },
+  button: { backgroundColor: "#2563EB", padding: 15, borderRadius: 10 },
+  buttonText: { fontWeight: "bold", fontSize: 16, color: "#fff" },
 });
