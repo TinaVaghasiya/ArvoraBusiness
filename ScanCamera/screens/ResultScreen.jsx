@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  KeyboardAvoidingView, 
+  Platform,
 } from "react-native";
 
 export default function ResultScreen({ route, navigation }) {
-  // Get scanned data from navigation params
   const {
     name: scannedName,
     company: scannedCompany,
@@ -17,7 +18,6 @@ export default function ResultScreen({ route, navigation }) {
     phone: scannedPhone,
   } = route.params;
 
-  // Editable state
   const [name, setName] = useState(scannedName);
   const [company, setCompany] = useState(scannedCompany);
   const [email, setEmail] = useState(scannedEmail);
@@ -35,6 +35,7 @@ export default function ResultScreen({ route, navigation }) {
           company,
           email,
           phone,
+          note,
         }),
       });
 
@@ -55,8 +56,13 @@ export default function ResultScreen({ route, navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Scanned Card Details</Text>
+    <KeyboardAvoidingView 
+    style={{ flex: 1 }} 
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+  >
+    <ScrollView 
+    contentContainerStyle={styles.container} 
+    keyboardShouldPersistTaps="handled">
 
       <Text style={styles.label}>Name</Text>
       <TextInput
@@ -92,10 +98,16 @@ export default function ResultScreen({ route, navigation }) {
         keyboardType="phone-pad"
       />
 
+      <Text style={styles.label}>Note (optional)</Text>
+      <TextInput
+        style={styles.inputbox}
+        placeholder="Enter Note"
+      />
       <TouchableOpacity style={styles.button} onPress={handleSave}>
         <Text style={styles.buttonText}>Save</Text>
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -103,8 +115,8 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingTop: 40,
-    backgroundColor: "#f0f0f0",
-    flexGrow: 1,
+    backgroundColor: "#fcfcfc",
+    height: "100%",
   },
   title: {
     fontSize: 22,
@@ -124,6 +136,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: "#ccc",
+  },
+  inputbox: {
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    height: 100,
+    textAlignVertical: "top",
   },
   button: {
     backgroundColor: "#2563EB",
