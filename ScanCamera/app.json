@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "CameraScanner",
+    "slug": "CameraScanner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "newArchEnabled": false,
+    "plugins": [
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Allow access to camera"
+        }
+      ]
+    ],
+    "android": {
+      "permissions": [ "CAMERA" ],
+      "package": "com.anonymous.CameraScanner"
+    }
+  }
+}
