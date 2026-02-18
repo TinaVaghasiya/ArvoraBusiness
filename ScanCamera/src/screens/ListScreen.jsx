@@ -1,18 +1,17 @@
-import { use, useEffect, useState } from "react";
+import { useLayoutEffect, useEffect, useState } from "react";
 import {
     View,
     Text,
     StyleSheet,
     FlatList,
-    ActivityIndicator,
     RefreshControl,
     TextInput,
     TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Modal } from "react-native";
-import { useNavigation} from "@react-navigation/native";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 export default function ListScreen() {
@@ -22,21 +21,16 @@ export default function ListScreen() {
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [allCards, setAllCards] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
     const [search, setSearch] = useState("");
     const [selectedFilters, setSelectedFilters] = useState([]);
     const [filterVisible, setFilterVisible] = useState(false);
     const [sortVisible, setSortVisible] = useState(false);
     const [selectedSort, setSelectedSort] = useState("recent");
+    const [tempSort, setTempSort] = useState("recent");
     const insets = useSafeAreaInsets();
-    // const toggleFilter = (filter) => {
-    //     setSelectedFilters(prev =>
-    //         prev.includes(filter)
-    //             ? prev.filter(f => f !== filter)
-    //             : [...prev, filter]
-    //     );
-    // };
     const toggleSort = (key) => {
-        setSelectedSort(prev =>
+        setTempSort(prev =>
             prev === key ? null : key
         );
     };
@@ -131,7 +125,6 @@ export default function ListScreen() {
         }
     };
     useEffect(() => {
-        // setLoading(true);
         fetchCards();
     }, []);
 
@@ -174,132 +167,183 @@ export default function ListScreen() {
                 return sorted.reverse();
         }
     };
-    // useEffect(() => {
-    //     const sortedCards = sortCards(cards, selectedSort);
-    //     setCards(sortedCards);
-    // }, [selectedSort]);
+
+    useLayoutEffect(() => {
+        {/* header logic */ }
+        navigation.setOptions({
+            headerStyle: {
+                height: 95,
+                backgroundColor: "#618af0",
+                paddingTop: 45,
+                paddingHorizontal: 16,
+                flexDirection: "row",
+                alignItems: "center",
+            },
+            headerTintColor: "#fff",
+
+            headerTitle: isSearching
+                ? () => (
+                    <TextInput
+                        placeholder="Search..."
+                        placeholderTextColor="#928e8e"
+                        autoFocus
+                        value={search}
+                        onChangeText={handleSearch}
+                        style={styles.searchInput}
+                    />
+                )
+                : "Business Cards",
+
+            headerRight: () => (
+                <View style={styles.headerRight}>
+
+                    {isSearching ? (
+                        <TouchableOpacity
+                            style={{ marginRight: 20 }}
+                            onPress={() => setIsSearching(false)}
+                        >
+                            <Ionicons name="close" size={22} color="#fff" />
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            style={{ marginRight: 20 }}
+                            onPress={() => setIsSearching(true)}
+                        >
+                            <Ionicons name="search" size={22} color="#fff" />
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity onPress={() => {
+                        setTempSort(selectedSort);
+                        setSortVisible(true);
+                    }}>
+                        <Ionicons name="swap-vertical" size={22} color="#fff" />
+                    </TouchableOpacity>
+
+                </View>
+            ),
+        });
+    }, [navigation, isSearching, handleSearch]);
+
 
     useEffect(() => {
-    if (cards.length > 0) {
-        const sortedCards = sortCards(cards, selectedSort);
-        setCards(sortedCards);
-    }
-}, [selectedSort]);
+        if (cards.length > 0) {
+            const sortedCards = sortCards(cards, selectedSort);
+            setCards(sortedCards);
+        }
+    }, [selectedSort]);
 
 
     const activeFields = defaultFields;
 
     const renderItem = ({ item }) => {
-
-        // const isFiltered = selectedFilters.length > 0;
-        // const fieldCount = selectedFilters.length;
         return (
             <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate("CardDetails", { card: item })} >
-            <View
-                style={[
-                    styles.card,
-                ]}
-            >
-                <View style={styles.cardRow}>
-                    <View style={{ flex: 1 }}>
+                <View
+                    style={[
+                        styles.card,
+                    ]}
+                >
+                    <View style={styles.cardRow}>
+                        <View style={{ flex: 1 }}>
 
-                        {activeFields.includes("name") && (
-                            <Text style={styles.name}>
-                                {item.name}
-                            </Text>
-                        )}
+                            {activeFields.includes("name") && (
+                                <Text style={styles.name}>
+                                    {item.name}
+                                </Text>
+                            )}
 
-                        {activeFields.includes("company_or_email") && (
-                            <Text
-                                style={
-                                 styles.phone}
-                            >
-                                {item.company || item.email}
-                            </Text>
-                        )}
+                            {activeFields.includes("company_or_email") && (
+                                <Text
+                                    style={
+                                        styles.phone}
+                                >
+                                    {item.company || item.email}
+                                </Text>
+                            )}
 
-                        {activeFields.includes("phone") && (
-                            <Text
-                                style={styles.phone}
-                            >
-                                {item.phone}
-                            </Text>
-                        )}
+                            {activeFields.includes("phone") && (
+                                <Text
+                                    style={styles.phone}
+                                >
+                                    {item.phone}
+                                </Text>
+                            )}
 
-                        {activeFields.includes("email") && (
-                            <Text
-                                style={styles.phone}
-                            >
-                                {item.email}
-                            </Text>
-                        )}
+                            {activeFields.includes("email") && (
+                                <Text
+                                    style={styles.phone}
+                                >
+                                    {item.email}
+                                </Text>
+                            )}
+
+                        </View>
+                        <View>
+                            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                        </View>
 
                     </View>
-                    <View>
-                        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-                    </View>
-
                 </View>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
         );
     };
 
-
-    if (loading) {
-        return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" />
-            </View>
-        );
-    }
-
     return (
         <View style={styles.container}>
-            <View style={styles.searchRow}>
-                <View style={styles.search}>
 
-                    {/* <TouchableOpacity onPress={() => { setSearch(""); handleSearch("") }}>
-                    <Ionicons name="close-outline" size={24} color="#787e8b" style={{ position: "absolute", top: 10, right: 45 }} />
-                </TouchableOpacity> */}
-                    <TouchableOpacity>
-                        <Ionicons name="search" size={26} color="#3e3e3e" style={{ position: "absolute", top: 10, left: 1 }} />
-                    </TouchableOpacity>
+            {/* <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                </TouchableOpacity>
+
+                {!isSearching ? (
+                    <Text style={styles.headerTitle}>Business Cards</Text>
+                ) : (
                     <TextInput
-                        placeholder="Search.."
-                        placeholderTextColor="#62656a"
-                        style={styles.searchText}
+                        style={styles.searchInput}
+                        placeholder="Search..."
+                        placeholderTextColor="#5e5c5c"
+                        autoFocus
                         value={search}
                         onChangeText={handleSearch}
                     />
-                    {/* <TouchableOpacity onPress={() => { setFilterVisible(true); setSortVisible(false); }} style={styles.filter}>
-                        <Ionicons name="options-outline" size={28} color="#327bb0" />
-                        {selectedFilters.length > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>
-                                    {selectedFilters.length}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity> */}
-                </View>
-            </View >
+                )}
 
+                <View style={styles.headerRight}>
 
-            <TouchableOpacity
-                style={styles.sortButton}
-                onPress={() => { setSortVisible(true) }}>
-                <Text style={styles.sortText}>Sort by</Text>
-                <Ionicons name="chevron-down" size={16} color="#353536" style={styles.sortIcon} />
-            </TouchableOpacity>
+                    {!isSearching && (
+                        <TouchableOpacity
+                            style={{ marginRight: 18 }}
+                            onPress={() => setIsSearching(true)}
+                        >
+                            <Ionicons name="search" size={22} color="#fff" />
+                        </TouchableOpacity>
+                    )}
 
+                    {isSearching && (
+                        <TouchableOpacity
+                            style={{ marginRight: 18 }}
+                            onPress={() => setIsSearching(false)}
+                        >
+                            <Ionicons name="close" size={22} color="#fff" />
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity onPress={() => { 
+                        setTempSort(selectedSort);
+                        setSortVisible(true); }}>
+                        <Ionicons name="swap-vertical" size={22} color="#fff" />
+                    </TouchableOpacity>
+                    </View>
+                </View> */}
 
             < FlatList
                 data={cards}
                 keyExtractor={(item) => item._id
                 }
                 renderItem={renderItem}
-                contentContainerStyle={{ paddingBottom: insets.bottom || 20 }}
+                contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.bottom || 20 }}
                 refreshControl={
                     < RefreshControl
                         refreshing={refreshing}
@@ -313,64 +357,7 @@ export default function ListScreen() {
                 }
             />
 
-            {/* ---------------------------Fiter Modal=-------------------------- */}
-
-            {/* < Modal
-                visible={filterVisible}
-                transparent
-                animationType="slide"
-            >
-                <TouchableOpacity
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setFilterVisible(false)}
-                >
-
-                    <View style={styles.filterModal}>
-
-                        <Text style={styles.modalTitle}>Filter By</Text>
-
-                        {["name", "company", "email", "phone"].map(type => (
-
-                            <TouchableOpacity
-                                key={type}
-                                style={[
-                                    styles.filterOption,
-                                    selectedFilters.includes(type) && styles.activeOption
-                                ]}
-                                onPress={() => toggleFilter(type)}
-                            >
-
-                                <Text
-                                    style={[
-                                        styles.filterText,
-                                        selectedFilters.includes(type) && styles.activeText
-                                    ]}
-                                >
-                                    {type.toString()}
-                                </Text>
-
-                                {selectedFilters.includes(type) && (
-                                    <Ionicons name="checkmark-circle" size={20} color="#2563EB" />
-                                )}
-
-                            </TouchableOpacity>
-
-                        ))}
-
-                        <TouchableOpacity
-                            style={styles.applyButton}
-                            onPress={() => setFilterVisible(false)}
-                        >
-                            <Text style={styles.applyText}>Apply Filters</Text>
-                        </TouchableOpacity>
-
-                    </View>
-
-                </TouchableOpacity>
-            </Modal> */}
-
-                    {/* -------------------------sort by modal---------------------------- */}
+            {/* -------------------------sort by modal---------------------------- */}
 
             <Modal
                 visible={sortVisible}
@@ -397,7 +384,7 @@ export default function ListScreen() {
                                 key={item.key}
                                 style={[
                                     styles.filterOption,
-                                    selectedSort === item.key && styles.activeOption
+                                    tempSort === item.key && styles.activeOption
                                 ]}
                                 onPress={() => toggleSort(item.key)}
                             >
@@ -405,7 +392,7 @@ export default function ListScreen() {
                                 <Text
                                     style={[
                                         styles.filterText,
-                                        selectedSort === item.key && styles.activeText
+                                        tempSort === item.key && styles.activeText
                                     ]}
                                 >
                                     {item.label}
@@ -414,10 +401,10 @@ export default function ListScreen() {
                                 <View
                                     style={[
                                         styles.checkbox,
-                                        selectedSort === item.key && styles.checkboxActive
+                                        tempSort === item.key && styles.checkboxActive
                                     ]}
                                 >
-                                    {selectedSort === item.key && (
+                                    {tempSort === item.key && (
                                         <Ionicons name="checkmark" size={14} color="#fff" />
                                     )}
                                 </View>
@@ -428,7 +415,10 @@ export default function ListScreen() {
 
                         <TouchableOpacity
                             style={styles.applyButton}
-                            onPress={() => setSortVisible(false)}
+                            onPress={() => {
+                                setSelectedSort(tempSort);
+                                setSortVisible(false)
+                            }}
                         >
                             <Text style={styles.applyText}>Apply Sort</Text>
                         </TouchableOpacity>
@@ -438,88 +428,63 @@ export default function ListScreen() {
                 </TouchableOpacity>
             </Modal>
         </View >
+
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#F8FAFC",
-        paddingHorizontal: 10,
-        paddingTop: 6,
-        paddingBottom: 0,
+        backgroundColor: "#F4F6FA",
     },
-    oneFieldCard: {
-        minHeight: 80,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    oneFieldText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#475569",
-        letterSpacing: 0.3,
-        textAlign: "left"
-    },
-    twoFieldCard: {
-        paddingVertical: 12
-    },
-    twoFieldText: {
-        fontSize: 17,
-        color: "#475569",
-        marginTop: 12,
-    },
-    filteredName: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#2563EB",
-        marginTop: 4,
-        marginBottom: -4,
-    },
-    
-    filteredText: {
-        fontSize: 24,
-        color: "#1E3A8A",
-        fontWeight: "500",
-        marginTop: 4,
-    },
-    searchRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 4,
-    },
-    search: {
-        flexDirection: "row",
-        marginTop: 6,
-        backgroundColor: "#fff",
-        borderRadius: 18,
-        paddingHorizontal: 18,
-        paddingVertical: 4,
-        fontSize: 16,
-        marginBottom: 0,
-        borderWidth: 1,
-        borderColor: "#e5e7eb",
-        width: "100%",
-    },
-    searchText: {
+    // header: {
+    //     height: 95,
+    //     backgroundColor: "#618af0",
+    //     paddingTop: 45,
+    //     paddingHorizontal: 16,
+    //     flexDirection: "row",
+    //     alignItems: "center",
+    // },
+
+    // headerTitle: {
+    //     flex: 1,
+    //     color: "#fff",
+    //     fontSize: 20,
+    //     fontWeight: "600",
+    //     marginLeft: 15,
+    // },
+
+    searchInput: {
         flex: 1,
-        paddingLeft: 40,
-        fontSize: 18,
-        color: "#111827",
-        paddingRight: 35,
+        color: "#3f3f3f",
+        fontSize: 16,
+        marginLeft: -20,
+        backgroundColor: "#eff5fd",
+        borderRadius: 17,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginRight: 16,
+        marginBottom: 2,
+        width: 245,
+        shadowOffset:{ width: 0, height: 4 },
+        shadowColor: "#000"
+    },
+
+    headerRight: {
+        flexDirection: "row",
+        alignItems: "center",
     },
     cardRow: {
         flexDirection: "row",
         alignItems: "center",
     },
-
     card: {
         padding: 18,
         borderRadius: 16,
         marginBottom: 12,
         borderBottomWidth: 1,
         borderBottomColor: "#e0e7ff",
-        marginTop: -16,
+        marginTop: -10,
         minHeight: 80,
         justifyContent: "center",
     },
@@ -528,26 +493,11 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#1380c3",
     },
-
     phone: {
         fontSize: 14,
         color: "#64748B",
         marginTop: 3,
-    },
-    note: {
-        marginTop: 12,
-        fontSize: 14,
-        color: "#2563EB",
-        fontStyle: "italic",
-        backgroundColor: "#eff6ff",
-        padding: 8,
-        borderRadius: 8,
-    },
 
-    center: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
     },
     empty: {
         textAlign: "center",
@@ -567,6 +517,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         marginBottom: 40,
+        width: "100%",
     },
     checkbox: {
         width: 20,
@@ -601,22 +552,7 @@ const styles = StyleSheet.create({
         minHeight: 35,
         justifyContent: "flex-end",
         marginTop: 6,
-    },
-    badge: {
-        position: "absolute",
-        top: -6,
-        right: -6,
-        backgroundColor: "#456ae4",
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    badgeText: {
-        color: "#fff",
-        fontSize: 11,
-        fontWeight: "bold",
+
     },
     modalOverlay: {
         flex: 1,
@@ -649,8 +585,9 @@ const styles = StyleSheet.create({
 
     activeOption: {
         backgroundColor: "#EFF6FF",
-        borderRadius: 10,
+        borderRadius: 8,
         paddingHorizontal: 10,
+        marginHorizontal: -10,
     },
 
     filterText: {

@@ -15,6 +15,8 @@ export default function CardDetails({ route }) {
 
   const [note, setNote] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [menuHeaderVisible, setMenuHeaderVisible] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [tempNote, setTempNote] = useState("");
 
@@ -33,25 +35,63 @@ export default function CardDetails({ route }) {
     setMenuVisible(false);
   };
 
+  const handleDeleteCard = () => {
+    // If parent passed an onDelete callback, call it with the card id
+    try {
+      if (route?.params?.onDelete) {
+        route.params.onDelete(card?.id ?? card);
+      }
+    } catch (e) {
+      // ignore
+    }
+    setDeleteConfirmVisible(false);
+    setMenuHeaderVisible(false);
+    navigation.goBack();
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        <View style={[styles.nameheader,
-              !card.company && { paddingBottom: 22 }]}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={[styles.backButton,!card.company && {marginTop:8}]}
-          >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <View style={styles.headerTextContainer}>
-            <Text style={[
-              styles.name,!card.company && {marginTop: 8}]}>{card.name}</Text>
-            {card.company && <Text style={styles.title}>{card.company}</Text>}
+        <View style={[styles.nameheader, !card.company && { paddingBottom: 22 }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={[styles.backButton, !card.company && { marginTop: 8 }]}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={[styles.name, !card.company && { marginTop: 8 }]}>{card.name}</Text>
+              {card.company && <Text style={styles.title}>{card.company}</Text>}
+            </View>
           </View>
+
+          <Menu
+            visible={menuHeaderVisible}
+            onDismiss={() => setMenuHeaderVisible(false)}
+            anchor={
+              <IconButton
+                icon="dots-vertical"
+                size={26}
+                iconColor="#ffffff"
+                onPress={() => setMenuHeaderVisible(true)}
+                style={{ marginRight: 0, marginTop: 8 }}
+              />
+            }
+            contentStyle={{ backgroundColor: "#fafdff", marginTop: 35, marginLeft: 14, paddingHorizontal: 0, paddingVertical: 0 }}
+          >
+            <Menu.Item
+              onPress={() => {
+                setMenuHeaderVisible(false);
+                setDeleteConfirmVisible(true);
+              }}
+              title="Delete"
+              titleStyle={{ color: "#f15a5a" }}
+            />
+          </Menu>
         </View>
 
 
@@ -161,6 +201,16 @@ export default function CardDetails({ route }) {
               <Dialog.Actions>
                 <Button onPress={() => setDialogVisible(false)}>Cancel</Button>
                 <Button onPress={handleAddNote}>Save</Button>
+              </Dialog.Actions>
+            </Dialog>
+            <Dialog visible={deleteConfirmVisible} onDismiss={() => setDeleteConfirmVisible(false)}>
+              <Dialog.Title>Delete card</Dialog.Title>
+              <Dialog.Content>
+                <Text style={{ color: "#6B7280" }}>Are you sure you want to delete this card?</Text>
+              </Dialog.Content>
+              <Dialog.Actions>
+                <Button onPress={() => setDeleteConfirmVisible(false)}>Cancel</Button>
+                <Button onPress={handleDeleteCard} color="#f15a5a">Delete</Button>
               </Dialog.Actions>
             </Dialog>
           </Portal>

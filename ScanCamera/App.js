@@ -30,9 +30,6 @@ import ScanScreen from "./src/screens/ScanScreen";
 import ResultScreen from "./src/screens/ResultScreen";
 import ListScreen from "./src/screens/ListScreen";
 import CardDetails from "./src/screens/CardDetails";
-import { TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
 
 const Stack = createNativeStackNavigator();
 
@@ -75,10 +72,7 @@ export default function App() {
             name="ListScreen"
             component={ListScreen}
             options={{
-              title: "Business Cards",
-              headerTintColor: "#fff",
               headerShown: true,
-              headerStyle: { backgroundColor: "#618af0" },
             }}
           />
           <Stack.Screen
