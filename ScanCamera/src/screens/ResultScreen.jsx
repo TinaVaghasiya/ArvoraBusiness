@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  View,
   KeyboardAvoidingView,
+  Image,
 } from "react-native";
 
 export default function ResultScreen({ route, navigation }) {
@@ -15,6 +17,7 @@ export default function ResultScreen({ route, navigation }) {
     company: scannedCompany,
     email: scannedEmail,
     phone: scannedPhone,
+    imageUri,
   } = route.params;
 
   const [name, setName] = useState(scannedName);
@@ -25,6 +28,7 @@ export default function ResultScreen({ route, navigation }) {
 
   const handleSave = async () => {
     try {
+      console.log("🔄 Attempting to save...");
       const response = await fetch(
         "http://192.168.1.11:5000/api/cards/save-card",
         {
@@ -41,34 +45,35 @@ export default function ResultScreen({ route, navigation }) {
           }),
         },
       );
-
       const data = await response.json();
 
       if (data.success) {
         Alert.alert("Saved!", "Card stored in database successfully");
-        setName("");
-        setCompany("");
-        setEmail("");
-        setPhone("");
-        setNote("");
       } else {
         Alert.alert("Error", "Failed to save card");
       }
     } catch (error) {
-      Alert.alert("Error", "Server not reachable");
+      Alert.alert("Error", `Server not reachable: ${error.message}`);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#fcfcfc" }}
-      behavior="padding"
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.label}>Name</Text>
+  <KeyboardAvoidingView style={styles.root} behavior="padding">
+    <ScrollView contentContainerStyle={styles.container}>
+      
+      <Text style={styles.title}>Contact Details</Text>
+      {/* Image Card */}
+      <View style={styles.imageCard}>
+        <Image
+          source={{ uri: imageUri }}
+          style={styles.image}
+          resizeMode="contain"
+        />
+      </View>
+
+      {/* Form Card */}
+      <View style={styles.formCard}>
+        <Text style={styles.label}>Full Name</Text>
         <TextInput
           style={styles.input}
           value={name}
@@ -102,72 +107,105 @@ export default function ResultScreen({ route, navigation }) {
           keyboardType="phone-pad"
         />
 
-        <Text style={styles.label}>
-          Note
-          <Text style={{ fontWeight: "400", color: "#5a5656", fontSize: 14 }}>
-            {" "}
-            (Optional)
-          </Text>
-        </Text>
+        <Text style={styles.label}>Note (Optional)</Text>
         <TextInput
-          style={styles.inputbox}
+          style={styles.noteInput}
           value={note}
           onChangeText={setNote}
-          placeholder="Enter Note"
+          placeholder="Add note..."
+          multiline
         />
-        <TouchableOpacity style={styles.button} onPress={handleSave}>
-          <Text style={styles.buttonText}>Save</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+      </View>
+
+      {/* Buttons */}
+      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <Text style={styles.saveButtonText}>Save Contact</Text>
+      </TouchableOpacity>
+
+    </ScrollView>
+  </KeyboardAvoidingView>
+);
+
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#dfe7f8",
+  },
   container: {
     padding: 20,
-    paddingTop: 40,
-    flexGrow: 1,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 30,
+    marginTop: 20,
+    marginBottom: 20,
     textAlign: "center",
+    color: "#1F2937",
   },
+
+  imageCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 10,
+    marginBottom: 20,
+    elevation: 4,
+  },
+  image: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+  },
+
+  formCard: {
+    backgroundColor: "#eff2f4",
+    borderRadius: 16,
+    padding: 20,
+    elevation: 4,
+  },
+
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
-    marginBottom: 5,
+    marginBottom: 6,
+    color: "#374151",
   },
+
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F9FAFB",
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
+    borderRadius: 10,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#E5E7EB",
   },
-  inputbox: {
-    backgroundColor: "#fff",
+
+  noteInput: {
+    backgroundColor: "#F9FAFB",
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
+    borderRadius: 10,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#ccc",
-    height: 100,
+    borderColor: "#E5E7EB",
+    height: 90,
     textAlignVertical: "top",
   },
-  button: {
+
+  saveButton: {
     backgroundColor: "#2563EB",
-    paddingVertical: 15,
-    borderRadius: 25,
-    marginTop: 10,
+    paddingVertical: 16,
+    borderRadius: 30,
+    marginTop: 20,
+    elevation: 3,
   },
-  buttonText: {
+
+  saveButtonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
   },
 });
+
