@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Text,
-  StyleSheet,
-} from "react-native";
-import { BlurView } from "expo-blur";
+import { View, Alert, Modal, Text, StyleSheet } from "react-native";
 import DocumentScanner from "react-native-document-scanner-plugin";
 import * as Progress from "react-native-progress";
 
@@ -42,35 +34,80 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
-  const uploadToBackend = async (imageUri) => {
+  const uploadToBackend = async (imageUrl) => {
     try {
+      const formattedUri = imageUrl.startsWith("file://")
+        ? imageUrl
+        : "file://" + imageUrl;
+
       const formData = new FormData();
       formData.append("file", {
-        uri: imageUri,
+        uri: formattedUri,
         type: "image/jpeg",
         name: "card.jpg",
       });
+      console.log("Image URI:", formattedUri);
 
-      const res = await fetch("http://192.168.1.20:8000/extract", {
+      const res = await fetch("http://192.168.1.6:8000/extract-business-data", {
         method: "POST",
         body: formData,
       });
 
+      if (!res.ok) {
+        console.error("API Error - Status:", res.status);
+        throw new Error(`Server returned status ${res.status}`);
+      }
+
       const json = await res.json();
+
       const card = json?.data?.[0] ?? {};
 
+      const name = card?.name?.name1 ?? "";
+      const designation = card?.designations?.designation1 ?? "";
+      const company = card?.company_name?.company1 ?? "";
+      const email = card?.emails?.email1 ?? "";
+
+      const phone = [
+        card?.mobile_numbers?.ph1,
+        card?.mobile_numbers?.ph2,
+        card?.mobile_numbers?.ph3,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      const address = card?.addresses?.address1 ?? "";
+
+      console.log("Extracted card data:", {
+        name,
+        designation,
+        company,
+        email,
+        phone,
+        address,
+      });
+
       setLoading(false);
 
-      navigation.replace("Result", {
-        name: card?.name?.name1 ?? "",
-        company: card?.company_name?.company1 ?? "",
-        email: card?.emails?.email1 ?? "",
-        phone: card?.mobile_numbers?.ph1 ?? "",
-        imageUri,
-      });
+      if (name.trim() || company.trim() || email.trim() || phone.trim()) {
+        navigation.replace("ResultScreen", {
+          name,
+          designation,
+          company,
+          email,
+          phone,
+          address,
+          imageUrl,
+        });
+      } else {
+        // Alert.alert("No Card Data Detected");
+
+        navigation.replace("ScanScreen");
+      }
     } catch (error) {
+      console.error("Full error details:", error);
+
       setLoading(false);
-      Alert.alert("Error", "Failed to send image to server");
+      Alert.alert("Error", `Failed to send image to server: ${error.message}`);
       navigation.goBack();
     }
   };
@@ -90,7 +127,9 @@ export default function ScanScreen({ navigation }) {
               borderRadius={15}
             />
           </View>
-          <Text style={{ marginTop: 10, fontSize: 16, color: "#E5E7EB" }}>Processing...</Text>
+          <Text style={{ marginTop: 10, fontSize: 16, color: "#E5E7EB" }}>
+            Processing...
+          </Text>
         </View>
       </Modal>
     </View>
@@ -103,7 +142,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(8, 8, 8, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   loaderBox: {
     backgroundColor: "#E5E7EB",

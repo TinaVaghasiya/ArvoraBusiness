@@ -5,127 +5,157 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  ScrollView,
   View,
-  KeyboardAvoidingView,
   Image,
 } from "react-native";
-
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 export default function ResultScreen({ route, navigation }) {
   const {
     name: scannedName,
+    designation: scannedDesignation,
     company: scannedCompany,
     email: scannedEmail,
     phone: scannedPhone,
-    imageUri,
+    address: scannedAddress,
+    imageUrl,
   } = route.params;
 
   const [name, setName] = useState(scannedName);
+  const [designation, setDesignation] = useState(scannedDesignation);
   const [company, setCompany] = useState(scannedCompany);
   const [email, setEmail] = useState(scannedEmail);
   const [phone, setPhone] = useState(scannedPhone);
+  const [address, setAddress] = useState(scannedAddress);
   const [note, setNote] = useState("");
 
   const handleSave = async () => {
     try {
-      console.log("🔄 Attempting to save...");
+      const formData = new FormData();
+
+      formData.append("name", name);
+      formData.append("designation", designation);
+      formData.append("company", company);
+      formData.append("email", email);
+      formData.append("phone", phone);
+      formData.append("address", address);
+      formData.append("note", note);
+
+      formData.append("image", {
+        uri: imageUrl,
+        type: "image/jpeg",
+        name: "card.jpg",
+      });
+
       const response = await fetch(
-        "http://192.168.1.11:5000/api/cards/save-card",
+        "http://192.168.1.8:5000/api/cards/save-card",
+
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name,
-            company,
-            email,
-            phone,
-            note,
-          }),
+
+          body: formData,
         },
       );
+
       const data = await response.json();
 
       if (data.success) {
-        Alert.alert("Saved!", "Card stored in database successfully");
-      } else {
-        Alert.alert("Error", "Failed to save card");
+        Alert.alert("Saved!", "Card stored successfully", [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("ListScreen"),
+          },
+        ]);
       }
     } catch (error) {
-      Alert.alert("Error", `Server not reachable: ${error.message}`);
+      Alert.alert("Error", error.message);
     }
   };
 
   return (
-  <KeyboardAvoidingView style={styles.root} behavior="padding">
-    <ScrollView contentContainerStyle={styles.container}>
-      
-      <Text style={styles.title}>Contact Details</Text>
-      {/* Image Card */}
-      <View style={styles.imageCard}>
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.image}
-          resizeMode="contain"
-        />
-      </View>
+    <View style={styles.root}>
+      <KeyboardAwareScrollView
+        enableOnAndroid={true}
+        extraScrollHeight={230}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.container}
+      >
+        <View style={styles.imageCard}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            resizeMode="contain"
+          />
+        </View>
 
-      {/* Form Card */}
-      <View style={styles.formCard}>
-        <Text style={styles.label}>Full Name</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter Name"
-        />
+        {/* Form Card */}
 
-        <Text style={styles.label}>Company</Text>
-        <TextInput
-          style={styles.input}
-          value={company}
-          onChangeText={setCompany}
-          placeholder="Enter Company"
-        />
+        <View style={styles.formCard}>
+          <Text style={styles.label}>Full Name</Text>
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter Email"
-          keyboardType="email-address"
-        />
+          <TextInput style={styles.input} value={name} onChangeText={setName} />
 
-        <Text style={styles.label}>Phone</Text>
-        <TextInput
-          style={styles.input}
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Enter Phone"
-          keyboardType="phone-pad"
-        />
+          <Text style={styles.label}>Designation</Text>
 
-        <Text style={styles.label}>Note (Optional)</Text>
-        <TextInput
-          style={styles.noteInput}
-          value={note}
-          onChangeText={setNote}
-          placeholder="Add note..."
-          multiline
-        />
-      </View>
+          <TextInput
+            style={styles.input}
+            value={designation}
+            onChangeText={setDesignation}
+          />
 
-      {/* Buttons */}
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Save Contact</Text>
-      </TouchableOpacity>
+          <Text style={styles.label}>Company</Text>
 
-    </ScrollView>
-  </KeyboardAvoidingView>
-);
+          <TextInput
+            style={styles.input}
+            value={company}
+            onChangeText={setCompany}
+          />
 
+          <Text style={styles.label}>Email</Text>
+
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+
+          <Text style={styles.label}>Phone</Text>
+
+          <TextInput
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+          />
+
+          <Text style={styles.label}>Address</Text>
+
+          <TextInput
+            style={styles.addressInput}
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Enter Address"
+            multiline
+          />
+
+          <Text style={styles.label}>Note</Text>
+
+          <TextInput
+            style={styles.noteInput}
+            value={note}
+            onChangeText={setNote}
+            placeholder="Add note..."
+            multiline
+          />
+        </View>
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>Save Card</Text>
+        </TouchableOpacity>
+      </KeyboardAwareScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -135,7 +165,7 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   title: {
     fontSize: 22,
@@ -182,6 +212,18 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
 
+  addressInput: {
+    backgroundColor: "#F9FAFB",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    height: 70,
+    lineHeight: 20,
+    textAlignVertical: "top",
+  },
+
   noteInput: {
     backgroundColor: "#F9FAFB",
     padding: 12,
@@ -190,6 +232,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
     height: 90,
+    lineHeight: 20,
     textAlignVertical: "top",
   },
 
@@ -208,4 +251,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

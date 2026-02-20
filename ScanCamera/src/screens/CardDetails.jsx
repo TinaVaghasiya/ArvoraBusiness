@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { Menu, IconButton, Dialog, Portal, Button, TextInput } from "react-native-paper";
@@ -13,49 +13,84 @@ export default function CardDetails({ route }) {
   const handleWebsite = () =>
     Linking.openURL(`https://${card.website}`);
 
-  const [note, setNote] = useState(null);
+  // const [note, setNote] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuHeaderVisible, setMenuHeaderVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [tempNote, setTempNote] = useState("");
+  const [currentNote, setCurrentNote] = useState(card.note || "");
+
 
   const openDialog = () => {
     setTempNote("");
     setDialogVisible(true);
   };
 
-  const handleAddNote = () => {
-    setNote(tempNote);
-    setDialogVisible(false);
-  };
-
-  const handleDeleteNote = () => {
-    setNote(null);
-    setMenuVisible(false);
-  };
-
-  const handleDeleteCard = () => {
-    // If parent passed an onDelete callback, call it with the card id
-    try {
-      if (route?.params?.onDelete) {
-        route.params.onDelete(card?.id ?? card);
+  const handleAddNote = async () => {
+  try {
+    const response = await fetch(
+      `http://192.168.1.8:5000/api/cards/update-card/${card._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: tempNote }),
       }
-    } catch (e) {
-      // ignore
+    );
+    const data = await response.json();
+    if (data.success) {
+      card.note = tempNote;
+      setCurrentNote(tempNote);
+      setDialogVisible(false);
     }
-    setDeleteConfirmVisible(false);
-    setMenuHeaderVisible(false);
-    navigation.goBack();
-  };
+  } catch (error) {
+    console.log("Error updating note:", error);
+  }
+};
+
+const handleDeleteNote = async () => {
+  try {
+    const response = await fetch(
+      `http://192.168.1.8:5000/api/cards/update-card/${card._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: "" }),
+      }
+    );
+    const data = await response.json();
+    if (data.success) {
+      setCurrentNote("");
+      setMenuVisible(false);
+    }
+  } catch (error) {
+    console.log("Error deleting note:", error);
+  }
+};
+
+const handleDeleteCard = async () => {
+  try {
+    const response = await fetch(
+      `http://192.168.1.8:5000/api/cards/delete-card/${card._id}`,
+      {
+        method: "DELETE",
+      }
+    );
+    const data = await response.json();
+    if (data.success) {
+      setDeleteConfirmVisible(false);
+      setMenuHeaderVisible(false);
+      navigation.goBack();
+    }
+  } catch (error) {
+    console.log("Error deleting card:", error);
+  }
+};
+
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
-      >
-        <View style={[styles.nameheader, !card.company && { paddingBottom: 22 }]}>
+      <View style={[styles.nameheader, !card.company && { paddingBottom: 22 }]}>
           <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
@@ -78,7 +113,7 @@ export default function CardDetails({ route }) {
                 size={26}
                 iconColor="#ffffff"
                 onPress={() => setMenuHeaderVisible(true)}
-                style={{ marginRight: 0, marginTop: 8 }}
+                style={{ marginRight: 0, marginTop: 14 }}
               />
             }
             contentStyle={{ backgroundColor: "#fafdff", marginTop: 35, marginLeft: 14, paddingHorizontal: 0, paddingVertical: 0 }}
@@ -94,14 +129,19 @@ export default function CardDetails({ route }) {
           </Menu>
         </View>
 
-
-
-        {/* Identity Section
-        <View style={styles.identityContainer}>
-          
-          <MaterialCommunityIcons name="office-building-outline" size={22} color="#2563EB" />
-          
-        </View> */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
+        {card?.imageUrl ? (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: card.imageUrl }}
+              style={styles.cardImage}
+              resizeMode="contain"
+            />
+          </View>
+        ) : null}
 
         {/* Contact Info Card */}
         <View style={[styles.card, !card.company && { marginTop: 22 }]}>
@@ -140,7 +180,7 @@ export default function CardDetails({ route }) {
         <View style={styles.card}>
           <View style={styles.header}>
             <Text style={styles.sectionTitle}>Notes</Text>
-            {card?.note ? (
+            {currentNote ? (
               <Menu
                 visible={menuVisible}
                 onDismiss={() => setMenuVisible(false)}
@@ -156,7 +196,7 @@ export default function CardDetails({ route }) {
               >
                 <Menu.Item
                   onPress={() => {
-                    setTempNote(note);
+                    setTempNote(currentNote);
                     setDialogVisible(true);
                     setMenuVisible(false);
                   }}
@@ -180,21 +220,22 @@ export default function CardDetails({ route }) {
           </View>
 
           <Text style={styles.notesText}>
-            {card.note ? card.note : "No notes yet."}
+            {currentNote ? currentNote : "No notes yet."}
           </Text>
 
           <Portal>{/* use for note editing pop up*/}
             <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)} style={{ backgroundColor: "#fbfbfc" }}>
-              <Dialog.Title>{card.note ? "Edit Note" : "Add Note"}</Dialog.Title>
+              <Dialog.Title>{currentNote ? "Edit Note" : "Add Note"}</Dialog.Title>
               <Dialog.Content>
                 <TextInput
                   mode="outlined"
                   label="Your Note"
-                  value={tempNote}
+                  defaultValue={tempNote}
                   onChangeText={setTempNote}
                   multiline={true}
                   numberOfLines={4}
                   textAlignVertical="top"
+                  autoFocus
                   style={{ backgroundColor: "#f5f6f9" }}
                 />
               </Dialog.Content>
@@ -229,15 +270,16 @@ const styles = StyleSheet.create({
   nameheader: {
     backgroundColor: "#618af0",
     paddingTop: 28,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: 14,
+    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
   },
 
   backButton: {
     padding: 4,
-    justifyContent: "flex-start"
+    justifyContent: "flex-start",
+    marginTop: 14
   },
 
   headerTextContainer: {
@@ -249,6 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: "#fff",
+    marginTop: 12,
   },
 
   title: {
@@ -335,6 +378,26 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 15,
+  },
+  
+  imageContainer: {
+    alignItems: "center",
+    marginTop: 20,
+    marginHorizontal: 20,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 5,
+    borderRadius: 18,
+    overflow: "hidden",
+  },
+
+  cardImage: {
+    width: "100%",
+    height: 220,
+    
   },
 
 });
