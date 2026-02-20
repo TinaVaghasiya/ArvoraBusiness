@@ -59,8 +59,10 @@ export default function ScanScreen({ navigation }) {
       }
 
       const json = await res.json();
+      // console.log("API Response:", json);
 
       const card = json?.data?.[0] ?? {};
+      console.log("Extracted card data:", card);
 
       const name = card?.name?.name1 ?? "";
       const designation = card?.designations?.designation1 ?? "";
@@ -77,7 +79,7 @@ export default function ScanScreen({ navigation }) {
 
       const address = card?.addresses?.address1 ?? "";
 
-      console.log("Extracted card data:", {
+      console.log("Final card data:", {
         name,
         designation,
         company,
@@ -99,8 +101,6 @@ export default function ScanScreen({ navigation }) {
           imageUrl,
         });
       } else {
-        // Alert.alert("No Card Data Detected");
-
         navigation.replace("ScanScreen");
       }
     } catch (error) {

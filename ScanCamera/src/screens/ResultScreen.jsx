@@ -8,6 +8,7 @@ import {
   View,
   Image,
 } from "react-native";
+import "../utils/api";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 export default function ResultScreen({ route, navigation }) {
   const {
@@ -47,7 +48,7 @@ export default function ResultScreen({ route, navigation }) {
       });
 
       const response = await fetch(
-        "http://192.168.1.8:5000/api/cards/save-card",
+        `${BASE_API}/api/cards/save-card`,
 
         {
           method: "POST",

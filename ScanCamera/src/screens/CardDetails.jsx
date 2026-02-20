@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { Menu, IconButton, Dialog, Portal, Button, TextInput } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
+import "../utils/api";
 
 export default function CardDetails({ route }) {
   const card = route?.params?.card;
@@ -30,7 +31,7 @@ export default function CardDetails({ route }) {
   const handleAddNote = async () => {
   try {
     const response = await fetch(
-      `http://192.168.1.8:5000/api/cards/update-card/${card._id}`,
+      `${BASE_API}/api/cards/update-card/${card._id}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -71,7 +72,7 @@ const handleDeleteNote = async () => {
 const handleDeleteCard = async () => {
   try {
     const response = await fetch(
-      `http://192.168.1.8:5000/api/cards/delete-card/${card._id}`,
+      `${BASE_API}/api/cards/delete-card/${card._id}`,
       {
         method: "DELETE",
       }
@@ -128,7 +129,7 @@ const handleDeleteCard = async () => {
             />
           </Menu>
         </View>
-
+        
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
@@ -397,8 +398,6 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: 220,
-    
   },
 
 });
-
