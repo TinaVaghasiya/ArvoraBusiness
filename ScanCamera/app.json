@@ -4,18 +4,18 @@
     "slug": "CameraScanner",
     "version": "1.0.0",
     "orientation": "portrait",
-    "newArchEnabled": false,
-    "plugins": [
-      [
-        "react-native-vision-camera",
-        {
-          "cameraPermissionText": "Allow access to camera"
-        }
-      ]
-    ],
+    "newArchEnabled": true,
     "android": {
-      "permissions": [ "CAMERA" ],
+      "permissions": [
+        "CAMERA"
+      ],
       "package": "com.anonymous.CameraScanner"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2370ff1e-b518-45b0-8687-dca27f0bbea4"
+      }
+    },
+    "owner": "anshika_vaghasiya"
   }
 }

@@ -25,9 +25,24 @@ export default function ResultScreen({ route, navigation }) {
   const [designation, setDesignation] = useState(scannedDesignation);
   const [company, setCompany] = useState(scannedCompany);
   const [email, setEmail] = useState(scannedEmail);
-  const [phone, setPhone] = useState(scannedPhone);
   const [address, setAddress] = useState(scannedAddress);
   const [note, setNote] = useState("");
+  const formatPhoneNumbers = (phones) => {
+    return phones
+      ?.split("\n") 
+      .map((num) => num.trim()) 
+      .filter(Boolean) 
+      .map((num) => {
+        if (num.startsWith("+91")) return num;
+
+        const clean = num.replace(/^0+/, "");
+
+        return `+91 ${clean}`;
+      })
+      .join("\n"); 
+  };
+
+  const [phone, setPhone] = useState(formatPhoneNumbers(scannedPhone));
 
   const handleSave = async () => {
     try {
@@ -60,10 +75,18 @@ export default function ResultScreen({ route, navigation }) {
       const data = await response.json();
 
       if (data.success) {
+        setName("");
+        setDesignation("");
+        setCompany("");
+        setEmail("");
+        setPhone("");
+        setAddress("");
+        setNote("");
+
         Alert.alert("Saved!", "Card stored successfully", [
           {
             text: "OK",
-            onPress: () => navigation.navigate("ListScreen"),
+            onPress: () => navigation.replace("ListScreen"),
           },
         ]);
       }
@@ -128,6 +151,7 @@ export default function ResultScreen({ route, navigation }) {
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
+            multiline={true}
           />
 
           <Text style={styles.label}>Address</Text>
@@ -220,7 +244,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    height: 70,
+    height: "auto",
     lineHeight: 20,
     textAlignVertical: "top",
   },

@@ -13,13 +13,14 @@ import {
   RefreshControl,
   TextInput,
   TouchableOpacity,
+  Keyboard,
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Modal } from "react-native";
 import "../utils/api";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 export default function ListScreen() {
   const defaultFields = ["name", "phone", "company_or_email"];
   const navigation = useNavigation();
@@ -30,8 +31,6 @@ export default function ListScreen() {
   const [allCards, setAllCards] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState([]);
-  const [filterVisible, setFilterVisible] = useState(false);
   const [sortVisible, setSortVisible] = useState(false);
   const [selectedSort, setSelectedSort] = useState("recent");
   const [tempSort, setTempSort] = useState("recent");
@@ -39,20 +38,14 @@ export default function ListScreen() {
   const toggleSort = (key) => {
     setTempSort((prev) => (prev === key ? null : key));
   };
-
   const fetchCards = async () => {
     try {
       setLoading(true);
-
       const response = await fetch(`${BASE_API}/api/cards/get-cards`);
-
       const data = await response.json();
-
       console.log("📥 Cards from backend:", data);
-
-      setAllCards(data);
-
-      const sorted = sortCards(data, selectedSort);
+      setAllCards(data.data);
+      const sorted = sortCards(data.data, selectedSort);
       setCards(sorted);
     } catch (error) {
       console.log("❌ Server Error:", error);
@@ -61,30 +54,33 @@ export default function ListScreen() {
       setRefreshing(false);
     }
   };
-
   useFocusEffect(
     useCallback(() => {
       fetchCards();
     }, []),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchCards().then((data) => {
+        const sorted = sortCards(data, selectedSort);
+        setCards(sorted);
+      });
+    }, [selectedSort]),
+  );
   const onRefresh = () => {
     setRefreshing(true);
     fetchCards();
   };
-
   const handleSearch = useCallback(
     (text) => {
       setSearch(text);
-
       if (text === "") {
         setCards(allCards);
         return;
       }
-
       const filteredData = allCards.filter((item) => {
         const searchText = text.toLowerCase();
-
         return (
           item.name?.toLowerCase().includes(searchText) ||
           item.company?.toLowerCase().includes(searchText) ||
@@ -92,37 +88,65 @@ export default function ListScreen() {
           item.phone?.toLowerCase().includes(searchText)
         );
       });
-
       setCards(filteredData);
     },
     [allCards],
   );
-
   const sortCards = (cardsToSort, sortType) => {
     const sorted = [...cardsToSort];
+    const getSortableValue = (card) => {
+      return (card.name || card.company || card.email || "").toLowerCase();
+    };
     switch (sortType) {
       case "az":
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+        return sorted.sort((a, b) =>
+          getSortableValue(a).localeCompare(getSortableValue(b)),
+        );
       case "za":
-        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+        return sorted.sort((a, b) =>
+          getSortableValue(b).localeCompare(getSortableValue(a)),
+        );
       case "recent":
       default:
         return sorted.reverse();
     }
   };
-
   useEffect(() => {
     let timer;
-
     if (isSearching) {
       timer = setTimeout(() => {
         searchInputRef.current?.focus();
-      }, 250); // give navigation header enough time
+      }, 250);
     }
-
     return () => clearTimeout(timer);
   }, [isSearching]);
-
+  useEffect(() => {
+    const backAction = () => {
+      if (isSearching) {
+        setIsSearching(false);
+        setSearch("");
+        setCards(allCards);
+        Keyboard.dismiss();
+        return true;
+      }
+      return false;
+    };
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction,
+    );
+    return () => backHandler.remove();
+  }, [isSearching, allCards]);
+  useEffect(() => {
+    const hideListener = Keyboard.addListener("keyboardDidHide", () => {
+      if (isSearching) {
+        setIsSearching(false);
+        setSearch("");
+        setCards(allCards);
+      }
+    });
+    return () => hideListener.remove();
+  }, [isSearching, allCards]);
   useLayoutEffect(() => {
     {
       /* header logic */
@@ -137,32 +161,49 @@ export default function ListScreen() {
         alignItems: "center",
       },
       headerTintColor: "#fff",
-
       headerTitle: isSearching
         ? () => (
-            <TextInput
-              placeholder="Search..."
-              placeholderTextColor="#928e8e"
-              ref={searchInputRef}
-              value={search}
-              onChangeText={handleSearch}
-              style={styles.searchInput}
-            />
+            <View style={styles.searchContainer}>
+              <TextInput
+                placeholder="Search..."
+                placeholderTextColor="#928e8e"
+                ref={searchInputRef}
+                value={search}
+                onChangeText={handleSearch}
+                style={styles.searchInput}
+              />
+              {search.length > 0 && (
+                <TouchableOpacity
+                  style={styles.clearIcon}
+                  onPress={() => {
+                    if (search.length > 0) {
+                      setSearch("");
+                      setCards(allCards);
+                    } else {
+                      Keyboard.dismiss();
+                      setIsSearching(false);
+                    }
+                  }}
+                >
+                  <Ionicons name="close" size={20} color="#6b7280" />
+                </TouchableOpacity>
+              )}
+            </View>
           )
         : "Business Cards",
-
       headerRight: () => (
         <View style={styles.headerRight}>
           {isSearching ? (
             <TouchableOpacity
-              style={{ marginRight: 35 }}
+              style={{ marginRight: 15 }}
               onPress={() => {
+                Keyboard.dismiss();
                 setIsSearching(false);
                 setSearch("");
                 setCards(allCards);
               }}
             >
-              <Ionicons name="close" size={22} color="#686767" />
+              {/* <Ionicons name="close" size={23} color="#686767" /> */}
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -172,7 +213,6 @@ export default function ListScreen() {
               <Ionicons name="search" size={22} color="#fff" />
             </TouchableOpacity>
           )}
-
           <TouchableOpacity
             onPress={() => {
               setTempSort(selectedSort);
@@ -184,17 +224,14 @@ export default function ListScreen() {
         </View>
       ),
     });
-  }, [navigation, isSearching, handleSearch]);
-
+  }, [navigation, isSearching, allCards, search, handleSearch]);
   useEffect(() => {
     if (allCards.length > 0) {
       const sortedCards = sortCards(allCards, selectedSort);
       setCards(sortedCards);
     }
   }, [selectedSort]);
-
   const activeFields = defaultFields;
-
   const renderItem = ({ item }) => {
     return (
       <TouchableOpacity
@@ -205,20 +242,23 @@ export default function ListScreen() {
           <View style={styles.cardRow}>
             <View style={{ flex: 1 }}>
               {activeFields.includes("name") && (
-                <Text style={styles.name}>{item.name}</Text>
-              )}
-
-              {activeFields.includes("company_or_email") && (
-                <Text style={styles.phone}>{item.company || item.email}</Text>
-              )}
-
-              {activeFields.includes("phone") && (
-                <Text style={styles.phone}>
-                  {item.phone?.split(",")[0].trim()}{" "}
-                  {/* to show only one number in card */}
+                <Text style={styles.name}>
+                  {item.name?.trim()
+                    ? item.name
+                    : item.company?.trim()
+                      ? item.company
+                      : item.email}
                 </Text>
               )}
-
+              {/* Second Line */}
+              {activeFields.includes("company_or_email") && (
+                <Text style={styles.phone}>
+                  {item.name?.trim() ? item.company || item.email : item.email}
+                </Text>
+              )}
+              {activeFields.includes("phone") && (
+                <Text style={styles.phone}>{item.phone?.split("\n")[0]}</Text>
+              )}
               {activeFields.includes("email") && (
                 <Text style={styles.phone}>{item.email}</Text>
               )}
@@ -231,109 +271,109 @@ export default function ListScreen() {
       </TouchableOpacity>
     );
   };
-
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={cards}
-        keyExtractor={(item) => item._id}
-        renderItem={renderItem}
-        contentContainerStyle={{
-          paddingTop: 12,
-          paddingBottom: insets.bottom || 20,
-        }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <Text style={styles.empty}>No cards saved yet!!</Text>
-        }
-      />
-
-      {/* -------------------------sort by modal---------------------------- */}
-
-      <Modal visible={sortVisible} transparent animationType="slide">
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setSortVisible(false)}
-        >
-          <View style={styles.sortModal}>
-            <Text style={styles.modalTitle}>Sort By</Text>
-
-            {[
-              { key: "recent", label: "Recently Added" },
-              { key: "az", label: "Name (A → Z)" },
-              { key: "za", label: "Name (Z → A)" },
-            ].map((item) => (
+    <View style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <FlatList
+          data={cards}
+          keyExtractor={(item) => item._id}
+          renderItem={renderItem}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            paddingTop: 12,
+            paddingBottom: insets.bottom || 20,
+          }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <Text style={styles.empty}>No cards saved yet!!</Text>
+          }
+        />
+        {/* -------------------------sort by modal---------------------------- */}
+        <Modal visible={sortVisible} transparent animationType="slide">
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setSortVisible(false)}
+          >
+            <View style={styles.sortModal}>
+              <Text style={styles.modalTitle}>Sort By</Text>
+              {[
+                { key: "recent", label: "Recently Added" },
+                { key: "az", label: "Name (A → Z)" },
+                { key: "za", label: "Name (Z → A)" },
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.filterOption,
+                    tempSort === item.key && styles.activeOption,
+                  ]}
+                  onPress={() => toggleSort(item.key)}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      tempSort === item.key && styles.activeText,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                  <View
+                    style={[
+                      styles.checkbox,
+                      tempSort === item.key && styles.checkboxActive,
+                    ]}
+                  >
+                    {tempSort === item.key && (
+                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
               <TouchableOpacity
-                key={item.key}
-                style={[
-                  styles.filterOption,
-                  tempSort === item.key && styles.activeOption,
-                ]}
-                onPress={() => toggleSort(item.key)}
+                style={styles.applyButton}
+                onPress={() => {
+                  setSelectedSort(tempSort);
+                  setSortVisible(false);
+                }}
               >
-                <Text
-                  style={[
-                    styles.filterText,
-                    tempSort === item.key && styles.activeText,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-
-                <View
-                  style={[
-                    styles.checkbox,
-                    tempSort === item.key && styles.checkboxActive,
-                  ]}
-                >
-                  {tempSort === item.key && (
-                    <Ionicons name="checkmark" size={14} color="#fff" />
-                  )}
-                </View>
+                <Text style={styles.applyText}>Apply Sort</Text>
               </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              style={styles.applyButton}
-              onPress={() => {
-                setSelectedSort(tempSort);
-                setSortVisible(false);
-              }}
-            >
-              <Text style={styles.applyText}>Apply Sort</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F6FA",
   },
-
-  searchInput: {
-    flex: 1,
-    color: "#3f3f3f",
-    fontSize: 16,
-    marginLeft: -20,
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#eff5fd",
     borderRadius: 17,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 16,
-    marginBottom: 2,
-    width: 245,
-    shadowOffset: { width: 0, height: 4 },
-    shadowColor: "#000",
+    width: "100%",
+    flex: 1,
   },
-
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#3f3f3f",
+    paddingVertical: 8,
+    paddingRight: 8,
+  },
+  clearIcon: {
+    position: "absolute",
+    right: 10,
+    padding: 5,
+  },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -391,7 +431,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   checkboxActive: {
     backgroundColor: "#2563EB",
   },
@@ -421,7 +460,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "flex-end",
   },
-
   filterModal: {
     backgroundColor: "#fff",
     padding: 20,
@@ -429,13 +467,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     marginBottom: 40,
   },
-
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 15,
   },
-
   filterOption: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -444,24 +480,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
   },
-
   activeOption: {
     backgroundColor: "#EFF6FF",
     borderRadius: 8,
     paddingHorizontal: 10,
     marginHorizontal: -10,
   },
-
   filterText: {
     fontSize: 16,
     color: "#6691ed",
   },
-
   activeText: {
     color: "#2563EB",
     fontWeight: "600",
   },
-
   applyButton: {
     backgroundColor: "#2563EB",
     padding: 14,
@@ -469,7 +501,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
   },
-
   applyText: {
     color: "#fff",
     fontWeight: "600",

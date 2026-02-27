@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Alert, Modal, Text, StyleSheet } from "react-native";
 import DocumentScanner from "react-native-document-scanner-plugin";
 import * as Progress from "react-native-progress";
+import "../utils/api";
 
 export default function ScanScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -34,81 +35,178 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
+  // const uploadToBackend = async (imageUrl) => {
+  //   try {
+  //     const formattedUri = imageUrl.startsWith("file://")
+  //       ? imageUrl
+  //       : "file://" + imageUrl;
+
+  //     const formData = new FormData();
+  //     formData.append("file", {
+  //       uri: formattedUri,
+  //       type: "image/jpeg",
+  //       name: "card.jpg",
+  //     });
+  //     console.log("Image URI:", formattedUri);
+
+  //     // previous api (1.6/extract-business-data )
+  //     const res = await fetch("http://192.168.1.20:8000/extract-card", {
+  //       method: "POST",
+  //       body: formData,
+  //     });
+
+  //     if (!res.ok) {
+  //       console.error("API Error - Status:", res.status);
+  //       throw new Error(`Server returned status ${res.status}`);
+  //     }
+
+  //     const json = await res.json();
+  //     // console.log("API Response:", json);
+
+  //     const card = json?.data?.[0] ?? {};
+  //     console.log("Extracted card data:", card);
+
+  //     // for extract-card api
+  //     const name = card?.name?.name1 ?? "";
+  //     const designation = card?.designations?.des1 || card?.designations?.designation1 || "";
+  //     const company = card?.company_name?.company1 || card?.company_name?.name1 || "";
+  //     const email = card?.emails?.email1 ?? "";
+
+  //     const phone = [
+  //       card?.mobile_numbers?.ph1,
+  //       card?.mobile_numbers?.ph2,
+  //       card?.mobile_numbers?.ph3,
+  //     ]
+  //       .filter(Boolean)
+  //       .join("\n");
+
+  //     const address = card?.addresses?.add1 || card?.addresses?.address1 || "";
+
+  //     console.log("Final card data:", {
+  //       name,
+  //       designation,
+  //       company,
+  //       email,
+  //       phone,
+  //       address,
+  //     });
+
+  //     setLoading(false);
+
+  //     if (name.trim() || company.trim() || email.trim() || phone.trim()) {
+  //       navigation.replace("ResultScreen", {
+  //         name,
+  //         designation,
+  //         company,
+  //         email,
+  //         phone,
+  //         address,
+  //         imageUrl,
+  //       });
+  //     } else {
+  //       navigation.replace("ScanScreen");
+  //     }
+  //   } catch (error) {
+  //     console.error("Full error details:", error);
+
+  //     setLoading(false);
+  //     Alert.alert("Error", `Failed to send image to server: ${error.message}`);
+  //     navigation.goBack();
+  //   }
+  // };
+
   const uploadToBackend = async (imageUrl) => {
+    const formattedUri = imageUrl.startsWith("file://")
+      ? imageUrl
+      : "file://" + imageUrl;
+
+    const formData = new FormData();
+    formData.append("file", {
+      uri: formattedUri,
+      type: "image/jpeg",
+      name: "card.jpg",
+    });
+
+    setLoading(true);
+
+    let card = {};
+
+    // First API extract-card
     try {
-      const formattedUri = imageUrl.startsWith("file://")
-        ? imageUrl
-        : "file://" + imageUrl;
-
-      const formData = new FormData();
-      formData.append("file", {
-        uri: formattedUri,
-        type: "image/jpeg",
-        name: "card.jpg",
-      });
-      console.log("Image URI:", formattedUri);
-
-      const res = await fetch("http://192.168.1.6:8000/extract-business-data", {
+      console.log("Uploading to extract-card API...");
+      const res = await fetch(`${OCR_API}/extract-card`, {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) {
-        console.error("API Error - Status:", res.status);
-        throw new Error(`Server returned status ${res.status}`);
-      }
+      if (!res.ok)
+        throw new Error(`extract-card API returned status ${res.status}`);
 
       const json = await res.json();
-      // console.log("API Response:", json);
+      card = json?.data?.[0] ?? {};
+      console.log("extract-card success:", card);
+    } catch (error) {
+      console.warn(
+        "extract-card failed:",
+        error,
+      );
 
-      const card = json?.data?.[0] ?? {};
-      console.log("Extracted card data:", card);
+      // Second API extract-business-data
+      try {
+        const res2 = await fetch(
+          `${OCR_API}/extract-business-data`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
-      const name = card?.name?.name1 ?? "";
-      const designation = card?.designations?.designation1 ?? "";
-      const company = card?.company_name?.company1 ?? "";
-      const email = card?.emails?.email1 ?? "";
+        if (!res2.ok)
+          throw new Error(
+            `extract-business-data API returned status ${res2.status}`,
+          );
 
-      const phone = [
-        card?.mobile_numbers?.ph1,
-        card?.mobile_numbers?.ph2,
-        card?.mobile_numbers?.ph3,
-      ]
-        .filter(Boolean)
-        .join(", ");
+        const json2 = await res2.json();
+        card = json2?.data?.[0] ?? {};
+        console.log("extract-business-data success:", card);
+      } catch (error2) {
+        console.error("Both APIs failed:", error2);
+        setLoading(false);
+        Alert.alert("Error", `Failed to process the image: ${error2.message}`);
+        navigation.goBack();
+        return;
+      }
+    }
 
-      const address = card?.addresses?.address1 ?? "";
+    const name = card?.name?.name1 ?? "";
+    const designation =
+      card?.designations?.des1 || card?.designations?.designation1 || "";
+    const company =
+      card?.company_name?.company1 || card?.company_name?.name1 || "";
+    const email = card?.emails?.email1 ?? "";
+    const phone = [
+      card?.mobile_numbers?.ph1,
+      card?.mobile_numbers?.ph2,
+      card?.mobile_numbers?.ph3,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const address = card?.addresses?.add1 || card?.addresses?.address1 || "";
 
-      console.log("Final card data:", {
+    setLoading(false);
+
+    if (name.trim() || company.trim() || email.trim() || phone.trim()) {
+      navigation.replace("ResultScreen", {
         name,
         designation,
         company,
         email,
         phone,
         address,
+        imageUrl,
       });
-
-      setLoading(false);
-
-      if (name.trim() || company.trim() || email.trim() || phone.trim()) {
-        navigation.replace("ResultScreen", {
-          name,
-          designation,
-          company,
-          email,
-          phone,
-          address,
-          imageUrl,
-        });
-      } else {
-        navigation.replace("ScanScreen");
-      }
-    } catch (error) {
-      console.error("Full error details:", error);
-
-      setLoading(false);
-      Alert.alert("Error", `Failed to send image to server: ${error.message}`);
-      navigation.goBack();
+    } else {
+      navigation.replace("ScanScreen");
     }
   };
 

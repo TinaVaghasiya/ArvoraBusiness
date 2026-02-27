@@ -1,10 +1,12 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const path = require("path");
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import path from "path";
+import cardRoutes from "./routes/cardRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
+const __dirname = path.dirname(import.meta.url);
 
 app.use(cors());              
 app.use(express.json());   
@@ -16,8 +18,8 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log("MongoDB Error:", err));
 
-const cardRoutes = require("./routes/cardRoutes");
 app.use("/api/cards", cardRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Visiting Card API is running");
