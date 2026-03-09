@@ -48,7 +48,7 @@ export default function ScanScreen({ navigation }) {
       });
       console.log("Image URI:", formattedUri);
 
-      const res = await fetch("http://192.168.1.6:8000/extract-business-data", {
+      const res = await fetch("http://192.168.1.20:8000/extract-card", {
         method: "POST",
         body: formData,
       });
@@ -75,7 +75,7 @@ export default function ScanScreen({ navigation }) {
         card?.mobile_numbers?.ph3,
       ]
         .filter(Boolean)
-        .join(", ");
+        .join("\n");
 
       const address = card?.addresses?.address1 ?? "";
 

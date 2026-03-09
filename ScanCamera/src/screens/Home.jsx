@@ -1,61 +1,40 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, BackHandler, Modal } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function HomeScreen() {
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     const onBackPress = () => {
-  //       Alert.alert(
-  //         "Exit App",
-  //         "Are you sure you want to exit?",
-  //         [
-  //           { text: "Cancel", style: "cancel" },
-  //           { text: "Exit", onPress: () => BackHandler.exitApp() }
-  //         ]
-  //       );
-  //       return true;
-  //     };
-
-  //     // const subscription = BackHandler.addEventListener(
-  //     //   "hardwareBackPress",
-  //     //   onBackPress
-  //     // );
-
-  //     return () => subscription.remove();
-  //   }, [])
-  // );
-
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const navigation = useNavigation();
 
+  useEffect(() => {
+    setExitModalVisible(false);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-    setExitModalVisible(false);
-    
-    const onBackPress = () => {
-      setExitModalVisible(true);
-      return true;
-    };
+      setExitModalVisible(false);
 
-    const subscription = BackHandler.addEventListener(
-      "hardwareBackPress",
-      onBackPress
-    );
+      const onBackPress = () => {
+        setExitModalVisible(true);
+        return true;
+      };
 
-    return () => subscription.remove();
-  }, [])
-);
-
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+      return () => subscription.remove();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
       <Image
         source={require("../../assets/heading1removebg.png")}
         style={styles.headingImage}
-
       />
       <Image
         source={require("../../assets/Untitleddesign.png")}
@@ -106,18 +85,23 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.alertButton, styles.exitButton]}
-                onPress={() => BackHandler.exitApp()}
+                onPress={async () => {
+                  setExitModalVisible(false);
+                  await AsyncStorage.removeItem("hasLaunched");
+                  BackHandler.exitApp();
+                }}
               >
                 <Text style={styles.exitText}>Exit</Text>
               </TouchableOpacity>
+
             </View>
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -178,7 +162,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#9CA3AF",
   },
-   modalOverlay: {
+  modalOverlay: {
     flex: 1,
     backgroundColor: "#00000080",
     justifyContent: "center",
