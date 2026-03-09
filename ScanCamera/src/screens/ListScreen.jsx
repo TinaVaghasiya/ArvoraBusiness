@@ -95,12 +95,7 @@ export default function ListScreen() {
   const sortCards = (cardsToSort, sortType) => {
     const sorted = [...cardsToSort];
     const getSortableValue = (card) => {
-      return (
-        card.name ||
-        card.company ||
-        card.email ||
-        ""
-      ).toLowerCase();
+      return (card.name || card.company || card.email || "").toLowerCase();
     };
     switch (sortType) {
       case "az":

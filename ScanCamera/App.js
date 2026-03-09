@@ -9,9 +9,9 @@ import ScanScreen from "./src/screens/ScanScreen";
 import ResultScreen from "./src/screens/ResultScreen";
 import ListScreen from "./src/screens/ListScreen";
 import CardDetails from "./src/screens/CardDetails";
-import RegisterScreen from "./src/screens/RegisterScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import OtpScreen from "./src/screens/OtpScreen";
+import RegisterScreen from "./src/screens/RegisterScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -76,13 +76,6 @@ export default function App() {
             }}
           />
           <Stack.Screen
-            name="RegisterScreen"
-            component={RegisterScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
             name="LoginScreen"
             component={LoginScreen}
             options={{
@@ -92,6 +85,13 @@ export default function App() {
           <Stack.Screen
             name="OtpScreen"
             component={OtpScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="RegisterScreen"
+            component={RegisterScreen}
             options={{
               headerShown: false,
             }}

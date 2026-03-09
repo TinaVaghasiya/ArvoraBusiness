@@ -1,9 +1,24 @@
+<<<<<<< HEAD
 import { View, Text, StyleSheet, TouchableOpacity, Image, BackHandler, Modal } from "react-native";
+=======
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  BackHandler,
+  Modal,
+} from "react-native";
+>>>>>>> 1dc359002843e1af0b5695acf5ba8b6c027440f4
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1dc359002843e1af0b5695acf5ba8b6c027440f4
 
 export default function HomeScreen() {
   const [exitModalVisible, setExitModalVisible] = useState(false);
@@ -24,10 +39,10 @@ export default function HomeScreen() {
 
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        onBackPress
+        onBackPress,
       );
       return () => subscription.remove();
-    }, [])
+    }, []),
   );
 
   return (
@@ -55,27 +70,27 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate("ListScreen")}>
-        <Text style={{
-          color: "#2563EB",
-          fontSize: 16,
-          marginTop: 15,
-          fontWeight: "600",
-        }}>View Saved Cards</Text>
+        <Text
+          style={{
+            color: "#2563EB",
+            fontSize: 16,
+            marginTop: 15,
+            fontWeight: "600",
+          }}
+        >
+          View Saved Cards
+        </Text>
       </TouchableOpacity>
 
-      <Text style={styles.footerText}>
-        Powered by arvora.business
-      </Text>
+      <Text style={styles.footerText}>Powered by arvora.business</Text>
 
-      <Modal
-        visible={exitModalVisible}
-        transparent
-        animationType="fade"
-      >
+      <Modal visible={exitModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.alertBox}>
             <Text style={styles.alertTitle}>Exit App</Text>
-            <Text style={styles.alertMessage}>Are you sure you want to exit?</Text>
+            <Text style={styles.alertMessage}>
+              Are you sure you want to exit?
+            </Text>
             <View style={styles.alertButtons}>
               <TouchableOpacity
                 style={[styles.alertButton, styles.cancelButton]}
@@ -173,7 +188,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     width: "75%",
-    height: "20%"
+    height: "20%",
   },
   alertTitle: {
     fontSize: 18,

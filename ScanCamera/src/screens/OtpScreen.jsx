@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,12 +13,24 @@ import "../utils/api";
 
 export default function OtpScreen({ navigation, route }) {
   const identifier = route?.params?.identifier;
-  console.log("Identifier received:", identifier);
   const inputs = useRef([]);
-  //   const { identifier } = route.params;
-
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [timer, setTimer] = useState(30);
+  const [reSend, setResend] = useState(false);
+
+  useEffect(() => {
+    if (timer === 0) {
+      setResend(true);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer]);
 
   const handleChange = (text, index) => {
     if (!/^[0-9]?$/.test(text)) return;
@@ -68,10 +80,10 @@ export default function OtpScreen({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-    console.log("OTP:", code);
   };
 
   const handleResend = async () => {
+    console.log("Resending OTP for identifier:", identifier);
     try {
       const response = await fetch(`${BASE_API}/api/auth/login`, {
         method: "POST",
@@ -86,6 +98,8 @@ export default function OtpScreen({ navigation, route }) {
         return;
       }
       Alert.alert("Success", " OTP sent to your email.");
+      setTimer(30);
+      setResend(false);
     } catch (error) {
       console.error("Error resending OTP:", error);
     }
@@ -123,8 +137,19 @@ export default function OtpScreen({ navigation, route }) {
         ))}
       </View>
       <View>
-        <TouchableOpacity style={styles.resend} onPress={handleResend}>
-          <Text style={styles.resendButtonText}>Resend OTP</Text>
+        <TouchableOpacity
+          style={styles.resend}
+          onPress={handleResend}
+          disabled={!reSend}
+        >
+          <Text
+            style={[
+              styles.resendButtonText,
+              { color: reSend ? "#407fe4" : "gray" },
+            ]}
+          >
+            {reSend ? "Resend OTP" : `Resend OTP in ${timer}s`}
+          </Text>
         </TouchableOpacity>
       </View>
 

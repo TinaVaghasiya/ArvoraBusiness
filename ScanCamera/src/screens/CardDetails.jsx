@@ -521,8 +521,8 @@ const styles = StyleSheet.create({
   },
 
   headerTextContainer: {
-    marginLeft: 15,
     marginLeft: 12,
+    flex: 1,
   },
 
   name: {

@@ -102,17 +102,17 @@ export default function LoginScreen() {
           />
 
           <View style={styles.bottomSection}>
-            <Text style={styles.bottomText}>
-              Don't have an account?{" "}
-            </Text>
-            <TouchableOpacity style={{ fontWeight: "bold" }} onPress={() => navigation.navigate("RegisterScreen")}>
-              <Text style={styles.bottomTextSign}>Sign Up
-              </Text>
+            <Text style={styles.bottomText}>Don’t have an Account? </Text>
+            <TouchableOpacity
+              style={{ fontWeight: "bold" }}
+              onPress={() => navigation.navigate("RegisterScreen")}
+            >
+              <Text style={styles.bottomTextSign}>Sign Up</Text>
             </TouchableOpacity>
           </View>
-      </View>
-    </SafeAreaView>
-    </KeyboardAvoidingView >
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     marginLeft: 40,
   },
   bottomSection: {
-    flexDirection:"row",
+    flexDirection: "row",
     alignItems: "center",
     position: "absolute",
     bottom: 60,
