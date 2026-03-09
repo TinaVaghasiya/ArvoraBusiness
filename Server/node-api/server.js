@@ -4,9 +4,11 @@ import cors from "cors";
 import path from "path";
 import cardRoutes from "./routes/cardRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import { fileURLToPath } from "url";
 
 const app = express();
-const __dirname = path.dirname(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cors());              
 app.use(express.json());   

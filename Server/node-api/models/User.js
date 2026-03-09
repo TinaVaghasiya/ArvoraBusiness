@@ -8,15 +8,15 @@ const UserSchema = new mongoose.Schema({
   },
   phone: String,
   company: String,
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
   verificationCode: String,
   otpExpiresAt: Date,
   isVerified:{
     type: Boolean,
     default: false
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   }
 });
 

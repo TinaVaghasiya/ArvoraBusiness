@@ -6,7 +6,8 @@ const uploadPath = path.resolve("uploads");
 
 export const getCards = async (req, res) => {
   try {
-    const cards = await Card.find().sort({
+    const userId = req.user.id;
+    const cards = await Card.find({user: userId}).sort({
       createdAt: -1,
     });
 
@@ -28,9 +29,12 @@ export const saveCard = async (req, res) => {
       ? `${process.env.SERVER_URL}/uploads/${req.file.filename}`
       : "";
 
+    const userId = req.user.id;
+
     const newCard = new Card({
       ...req.body,
       imageUrl,
+      user : userId
     });
 
     await newCard.save();
@@ -40,6 +44,7 @@ export const saveCard = async (req, res) => {
       message: "Card saved successfully",
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       success: false,
       message: "Failed to save",
@@ -55,6 +60,13 @@ export const deleteCard = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Card not found",
+      });
+    }
+
+    if (card.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized",
       });
     }
 
@@ -85,6 +97,20 @@ export const deleteCard = async (req, res) => {
 export const updateCard = async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
+
+    if (!card) {
+      return res.status(404).json({
+        success: false,
+        message: "Card not found",
+      });
+    }
+
+    if (card.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
 
     let imageUrl = card.imageUrl;
 
