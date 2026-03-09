@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { SendVerificationEmail } from "../middleware/Email.js";
 import User from "../models/User.js";
 
@@ -7,7 +8,9 @@ export const register = async (req, res) => {
     if (!email || !name || !phone) {
       return res.status(400).json({ message: "Fields are required" });
     }
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ 
+      $or: [{ email }, { phone }],
+     });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -22,7 +25,7 @@ export const register = async (req, res) => {
       phone,
       company,
       verificationCode,
-      otpExpiresAt: Date.now() + 5 * 30 * 1000,
+      otpExpiresAt: Date.now() + 5 * 60 * 1000,
     });
     await newUser.save();
     await SendVerificationEmail(newUser.email, verificationCode);
@@ -59,16 +62,23 @@ export const login = async (req, res) => {
         .status(404)
         .json({ message: "User not found. Please register" });
     }
+
+    if(!user.isVerified){
+      return res.status(400).json({ message: "Please verify your account" });
+    }
+
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000,
     ).toString();
+    console.log(verificationCode);
     await User.findByIdAndUpdate(user._id, {
       verificationCode,
-      otpExpiresAt: Date.now() + 5 * 30 * 1000,
+      otpExpiresAt: Date.now() + 5 * 60 * 1000,
     });
     await SendVerificationEmail(user.email, verificationCode);
+
     res.status(200).json({
-      message: "Verification code sent successfully",
+      message: "OTP sent successfully",
       user: {
         _id: user._id,
         name: user.name,
@@ -98,7 +108,7 @@ export const verifyOTP = async (req, res) => {
   try {
     const { identifier, otp } = req.body;
     if (!identifier || !otp) {
-      return res.status(400).json({ message: "OTP are required" });
+      return res.status(400).json({ message: "OTP is required" });
     }
     let user;
     if (identifier.includes("@")) {
@@ -120,14 +130,20 @@ export const verifyOTP = async (req, res) => {
     if (user.verificationCode !== otp) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
-    await User.findByIdAndUpdate(user._id, {
-      isVerified: true,
-      verificationCode: null,
-      otpExpiresAt: null,
-    });
+    user.isVerified = true;
+    user.verificationCode = null;
+    user.otpExpiresAt = null;
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id , email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES },
+    );
 
     res.status(200).json({
       message: "OTP verified successfully",
+      token,
       user: {
         _id: user._id,
         name: user.name,
