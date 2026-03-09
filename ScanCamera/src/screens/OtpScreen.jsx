@@ -10,6 +10,7 @@ import {
 // import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import "../utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function OtpScreen({ navigation, route }) {
   const identifier = route?.params?.identifier;
@@ -73,6 +74,7 @@ export default function OtpScreen({ navigation, route }) {
         Alert.alert("Login Failed", data.message);
         return;
       }
+      await AsyncStorage.setItem("userToken", data.token);
       Alert.alert("Login Successfully");
       navigation.replace("Home");
     } catch (error) {

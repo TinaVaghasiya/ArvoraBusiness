@@ -19,15 +19,16 @@ import {
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import "../utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function CardDetails({ route }) {
   const card = route?.params?.card;
+  // console.log("Card imageUrl:", card?.imageUrl);
+  // console.log("Full image URL:", card?.imageUrl)
   const navigation = useNavigation();
   const handleCall = () => Linking.openURL(`tel:${card.phone}`);
   const handleEmail = () => Linking.openURL(`mailto:${card.email}`);
   const handleWebsite = () => Linking.openURL(`https://${card.website}`);
-
-  const [note, setNote] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAddressVisible, setMenuAddressVisible] = useState(false);
   const [menuHeaderVisible, setMenuHeaderVisible] = useState(false);
@@ -57,108 +58,128 @@ export default function CardDetails({ route }) {
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
-  const handleAddAddress = async () => {
-    try {
-      const response = await fetch(
-        `${BASE_API}/api/cards/update-card/${card._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address: tempaddress }),
+const handleAddAddress = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await fetch(
+      `${BASE_API}/api/cards/update-card/${card._id}`,
+      {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-      );
-      const data = await response.json();
-      if (data.success) {
-        card.note = tempNote;
-        card.address = tempaddress;
-        setCurrentAddress(tempaddress);
-        setDialogAddressVisible(false);
-      }
-    } catch (error) {
-      console.log("Error updating address:", error);
+        body: JSON.stringify({ address: tempaddress }),
+      },
+    );
+    const data = await response.json();
+    if (data.success) {
+      card.address = tempaddress;
+      setCurrentAddress(tempaddress);
+      setDialogAddressVisible(false);
     }
-  };
+  } catch (error) {
+    console.log("Error updating address:", error);
+  }
+};
 
-  const handleDeleteAddress = async () => {
-    try {
-      const response = await fetch(
-        `${BASE_API}/api/cards/update-card/${card._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address: "" }),
+const handleDeleteAddress = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await fetch(
+      `${BASE_API}/api/cards/update-card/${card._id}`,
+      {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-      );
-      const data = await response.json();
-      if (data.success) {
-        setCurrentAddress("");
-        setMenuAddressVisible(false);
-      }
-    } catch (error) {
-      console.log("Error deleting address:", error);
+        body: JSON.stringify({ address: "" }),
+      },
+    );
+    const data = await response.json();
+    if (data.success) {
+      setCurrentAddress("");
+      setMenuAddressVisible(false);
     }
-  };
+  } catch (error) {
+    console.log("Error deleting address:", error);
+  }
+};
 
-  const handleAddNote = async () => {
-    try {
-      const response = await fetch(
-        `${BASE_API}/api/cards/update-card/${card._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ note: tempNote }),
+const handleAddNote = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await fetch(
+      `${BASE_API}/api/cards/update-card/${card._id}`,
+      {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-      );
-      const data = await response.json();
-      if (data.success) {
-        card.note = tempNote;
-        card.address = tempaddress;
-        setCurrentNote(tempNote);
-        setDialogVisible(false);
-      }
-    } catch (error) {
-      console.log("Error updating note:", error);
+        body: JSON.stringify({ note: tempNote }),
+      },
+    );
+    const data = await response.json();
+    if (data.success) {
+      card.note = tempNote;
+      setCurrentNote(tempNote);
+      setDialogVisible(false);
     }
-  };
+  } catch (error) {
+    console.log("Error updating note:", error);
+  }
+};
 
-  const handleDeleteNote = async () => {
-    try {
-      const response = await fetch(
-        `http://192.168.1.8:5000/api/cards/update-card/${card._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ note: "" }),
+const handleDeleteNote = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await fetch(
+      `${BASE_API}/api/cards/update-card/${card._id}`,
+      {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-      );
-      const data = await response.json();
-      if (data.success) {
-        setCurrentNote("");
-        setMenuVisible(false);
-      }
-    } catch (error) {
-      console.log("Error deleting note:", error);
+        body: JSON.stringify({ note: "" }),
+      },
+    );
+    const data = await response.json();
+    if (data.success) {
+      setCurrentNote("");
+      setMenuVisible(false);
     }
-  };
+  } catch (error) {
+    console.log("Error deleting note:", error);
+  }
+};
 
   const handleDeleteCard = async () => {
-    try {
-      const response = await fetch(
-        `${BASE_API}/api/cards/delete-card/${card._id}`,
-        {
-          method: "DELETE",
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await fetch(
+      `${BASE_API}/api/cards/delete-card/${card._id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
         },
-      );
-      const data = await response.json();
-      if (data.success) {
-        setDeleteConfirmVisible(false);
-        setMenuHeaderVisible(false);
-        navigation.goBack();
-      }
-    } catch (error) {
-      console.log("Error deleting card:", error);
+      },
+    );
+    const data = await response.json();
+    console.log("Delete response:", data);
+    if (data.success) {
+      setDeleteConfirmVisible(false);
+      setMenuHeaderVisible(false);
+      navigation.goBack();
     }
-  };
+  } catch (error) {
+    console.log("Error deleting card:", error);
+  }
+};
+
 
   return (
     <View style={styles.container}>
@@ -216,6 +237,7 @@ export default function CardDetails({ route }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
+        
         {card?.imageUrl ? (
           <View style={styles.imageContainer}>
             <Image

@@ -133,24 +133,8 @@ export default function ScanScreen({ navigation }) {
 
     // First API extract-card
     try {
-<<<<<<< HEAD
-      const formattedUri = imageUrl.startsWith("file://")
-        ? imageUrl
-        : "file://" + imageUrl;
-
-      const formData = new FormData();
-      formData.append("file", {
-        uri: formattedUri,
-        type: "image/jpeg",
-        name: "card.jpg",
-      });
-      console.log("Image URI:", formattedUri);
-
-      const res = await fetch("http://192.168.1.20:8000/extract-card", {
-=======
       console.log("Uploading to extract-card API...");
       const res = await fetch(`${OCR_API}/extract-card`, {
->>>>>>> 1dc359002843e1af0b5695acf5ba8b6c027440f4
         method: "POST",
         body: formData,
       });
@@ -182,15 +166,6 @@ export default function ScanScreen({ navigation }) {
             `extract-business-data API returned status ${res2.status}`,
           );
 
-<<<<<<< HEAD
-      const phone = [
-        card?.mobile_numbers?.ph1,
-        card?.mobile_numbers?.ph2,
-        card?.mobile_numbers?.ph3,
-      ]
-        .filter(Boolean)
-        .join("\n");
-=======
         const json2 = await res2.json();
         card = json2?.data?.[0] ?? {};
         console.log("extract-business-data success:", card);
@@ -202,7 +177,6 @@ export default function ScanScreen({ navigation }) {
         return;
       }
     }
->>>>>>> 1dc359002843e1af0b5695acf5ba8b6c027440f4
 
     const name = card?.name?.name1 ?? "";
     const designation =

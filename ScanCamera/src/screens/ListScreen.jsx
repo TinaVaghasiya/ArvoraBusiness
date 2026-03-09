@@ -21,6 +21,7 @@ import { Modal } from "react-native";
 import "../utils/api";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function ListScreen() {
   const defaultFields = ["name", "phone", "company_or_email"];
   const navigation = useNavigation();
@@ -39,21 +40,31 @@ export default function ListScreen() {
     setTempSort((prev) => (prev === key ? null : key));
   };
   const fetchCards = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${BASE_API}/api/cards/get-cards`);
-      const data = await response.json();
-      console.log("📥 Cards from backend:", data);
-      setAllCards(data.data);
-      const sorted = sortCards(data.data, selectedSort);
-      setCards(sorted);
-    } catch (error) {
-      console.log("❌ Server Error:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  try {
+    setLoading(true);
+    
+    const token = await AsyncStorage.getItem("userToken");
+    
+    const response = await fetch(`${BASE_API}/api/cards/get-cards`, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    
+    const data = await response.json();
+    console.log("📥 Cards from backend:", data);
+    
+    setAllCards(data.data);
+    const sorted = sortCards(data.data, selectedSort);
+    setCards(sorted);
+  } catch (error) {
+    console.log("❌ Server Error:", error);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
   // useFocusEffect(
   //   useCallback(() => {
   //     fetchCards();

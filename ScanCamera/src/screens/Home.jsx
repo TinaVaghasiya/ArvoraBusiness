@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-import { View, Text, StyleSheet, TouchableOpacity, Image, BackHandler, Modal } from "react-native";
-=======
 import {
   View,
   Text,
@@ -10,18 +7,16 @@ import {
   BackHandler,
   Modal,
 } from "react-native";
->>>>>>> 1dc359002843e1af0b5695acf5ba8b6c027440f4
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-<<<<<<< HEAD
-
-=======
->>>>>>> 1dc359002843e1af0b5695acf5ba8b6c027440f4
+import { Menu, IconButton } from "react-native-paper";
 
 export default function HomeScreen() {
   const [exitModalVisible, setExitModalVisible] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -45,78 +40,136 @@ export default function HomeScreen() {
     }, []),
   );
 
+  const handleLogout = () => {
+    setMenuVisible(false);
+    setLogoutModalVisible(true);
+  };
+
   return (
-    <View style={styles.container}>
-      <Image
-        source={require("../../assets/heading1removebg.png")}
-        style={styles.headingImage}
-      />
-      <Image
-        source={require("../../assets/Untitleddesign.png")}
-        style={styles.mainImage}
-      />
-
-      <Text style={styles.title}>Scan Business Cards</Text>
-      <Text style={styles.subtitle}>
-        Extract card details instantly with smart scanning
-      </Text>
-
-      <TouchableOpacity
-        style={styles.button}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate("ScanScreen")}
-      >
-        <Text style={styles.buttonText}>Start Scanning</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate("ListScreen")}>
-        <Text
-          style={{
-            color: "#2563EB",
-            fontSize: 16,
-            marginTop: 15,
-            fontWeight: "600",
-          }}
+    <View style={{ flex: 1 }}>
+      <View style={styles.menuContainer}>
+        <Menu
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          contentStyle={{ borderRadius: 10, paddingVertical: 0, top: 40, right: 10, elevation: 5 }}
+          anchor={
+            <IconButton
+              icon="logout"
+              size={26}
+              iconColor="#2563EB"
+              onPress={handleLogout}
+            />
+          }
         >
-          View Saved Cards
+          {/* <Menu.Item 
+          onPress={handleLogout} 
+          title="Logout"
+          titleStyle={{ color: "#eb2543" }} /> */}
+        </Menu>
+      </View>
+
+      <View style={styles.container}>
+        <Image
+          source={require("../../assets/heading1removebg.png")}
+          style={styles.headingImage}
+        />
+        <Image
+          source={require("../../assets/Untitleddesign.png")}
+          style={styles.mainImage}
+        />
+
+        <Text style={styles.title}>Scan Business Cards</Text>
+        <Text style={styles.subtitle}>
+          Extract card details instantly with smart scanning
         </Text>
-      </TouchableOpacity>
 
-      <Text style={styles.footerText}>Powered by arvora.business</Text>
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("ScanScreen")}
+        >
+          <Text style={styles.buttonText}>Start Scanning</Text>
+        </TouchableOpacity>
 
-      <Modal visible={exitModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.alertBox}>
-            <Text style={styles.alertTitle}>Exit App</Text>
-            <Text style={styles.alertMessage}>
-              Are you sure you want to exit?
-            </Text>
-            <View style={styles.alertButtons}>
-              <TouchableOpacity
-                style={[styles.alertButton, styles.cancelButton]}
-                onPress={() => setExitModalVisible(false)}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.alertButton, styles.exitButton]}
-                onPress={async () => {
-                  setExitModalVisible(false);
-                  await AsyncStorage.removeItem("hasLaunched");
-                  BackHandler.exitApp();
-                }}
-              >
-                <Text style={styles.exitText}>Exit</Text>
-              </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("ListScreen")}>
+          <Text
+            style={{
+              color: "#2563EB",
+              fontSize: 16,
+              marginTop: 15,
+              fontWeight: "600",
+            }}
+          >
+            View Saved Cards
+          </Text>
+        </TouchableOpacity>
 
+        <Text style={styles.footerText}>Powered by arvora.business</Text>
+
+        {/* Exit Modal */}
+        <Modal visible={exitModalVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.alertBox}>
+              <Text style={styles.alertTitle}>Exit App</Text>
+              <Text style={styles.alertMessage}>
+                Are you sure you want to exit?
+              </Text>
+              <View style={styles.alertButtons}>
+                <TouchableOpacity
+                  style={[styles.alertButton, styles.cancelButton]}
+                  onPress={() => setExitModalVisible(false)}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.alertButton, styles.exitButton]}
+                  onPress={async () => {
+                    setExitModalVisible(false);
+                    await AsyncStorage.removeItem("hasLaunched");
+                    BackHandler.exitApp();
+                  }}
+                >
+                  <Text style={styles.exitText}>Exit</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+
+        {/* Logout Modal */}
+        <Modal visible={logoutModalVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.alertBox}>
+              <Text style={styles.alertTitle}>Logout</Text>
+              <Text style={styles.alertMessage}>
+                Are you sure you want to logout?
+              </Text>
+              <View style={styles.alertButtons}>
+                <TouchableOpacity
+                  style={[styles.alertButton, styles.cancelButton]}
+                  onPress={() => setLogoutModalVisible(false)}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.alertButton, styles.exitButton]}
+                  onPress={async () => {
+                    setLogoutModalVisible(false);
+                    await AsyncStorage.removeItem("userToken");
+                    navigation.replace("LoginScreen");
+                  }}
+
+                >
+                  <Text style={styles.exitText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -125,6 +178,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 70,
   },
+  menuContainer: {
+    position: "absolute",
+    top: 45,
+    right: 20,
+    zIndex: 10,
+  },
+
   headingImage: {
     width: "135%",
     height: 150,
@@ -135,14 +195,12 @@ const styles = StyleSheet.create({
     height: 200,
     marginBottom: 25,
   },
-
   title: {
     fontSize: 26,
     fontWeight: "bold",
     color: "#111827",
     marginTop: 5,
   },
-
   subtitle: {
     fontSize: 15,
     color: "#6B7280",
@@ -150,7 +208,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 30,
   },
-
   button: {
     marginTop: 40,
     backgroundColor: "#2563EB",
@@ -165,13 +222,11 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
   },
-
   buttonText: {
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "600",
   },
-
   footerText: {
     marginTop: 30,
     fontSize: 12,

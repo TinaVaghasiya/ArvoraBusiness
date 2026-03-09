@@ -90,6 +90,13 @@ export default function LoginScreen() {
           <TouchableOpacity style={styles.button} onPress={handleSend}>
             <Text style={styles.buttonText}>Send OTP</Text>
           </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Home")}>
+          <Text style={{ color: "#fff", fontSize: 16, position: "absolute", left: 20 }}>
+            Home
+          </Text>
+        </TouchableOpacity>
+
         </View>
         <View style={styles.background}></View>
         <View style={styles.bottomWrapper}>

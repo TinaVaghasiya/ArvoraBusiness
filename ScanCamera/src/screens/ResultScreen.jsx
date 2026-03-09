@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import "../utils/api";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function ResultScreen({ route, navigation }) {
   const {
     name: scannedName,
@@ -27,27 +28,27 @@ export default function ResultScreen({ route, navigation }) {
   const [email, setEmail] = useState(scannedEmail);
   const [address, setAddress] = useState(scannedAddress);
   const [note, setNote] = useState("");
+  
   const formatPhoneNumbers = (phones) => {
     return phones
-      ?.split("\n") 
-      .map((num) => num.trim()) 
-      .filter(Boolean) 
+      ?.split("\n")
+      .map((num) => num.trim())
+      .filter(Boolean)
       .map((num) => {
         if (num.startsWith("+91")) return num;
-
         const clean = num.replace(/^0+/, "");
-
         return `+91 ${clean}`;
       })
-      .join("\n"); 
+      .join("\n");
   };
 
   const [phone, setPhone] = useState(formatPhoneNumbers(scannedPhone));
 
   const handleSave = async () => {
     try {
+      const token = await AsyncStorage.getItem("userToken");
+      console.log("Image URL being sent:", imageUrl);
       const formData = new FormData();
-
       formData.append("name", name);
       formData.append("designation", designation);
       formData.append("company", company);
@@ -55,34 +56,24 @@ export default function ResultScreen({ route, navigation }) {
       formData.append("phone", phone);
       formData.append("address", address);
       formData.append("note", note);
-
       formData.append("image", {
         uri: imageUrl,
         type: "image/jpeg",
         name: "card.jpg",
       });
 
-      const response = await fetch(
-        `${BASE_API}/api/cards/save-card`,
-
-        {
-          method: "POST",
-
-          body: formData,
+      const response = await fetch(`${BASE_API}/api/cards/save-card`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
         },
-      );
-
+        body: formData,
+      });
+      
       const data = await response.json();
+      console.log("Backend response:", data);
 
       if (data.success) {
-        setName("");
-        setDesignation("");
-        setCompany("");
-        setEmail("");
-        setPhone("");
-        setAddress("");
-        setNote("");
-
         Alert.alert("Saved!", "Card stored successfully", [
           {
             text: "OK",
