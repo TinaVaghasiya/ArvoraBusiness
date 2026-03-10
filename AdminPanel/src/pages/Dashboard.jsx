@@ -1,99 +1,92 @@
-// // import Sidebar from "../components/Sidebar";
-// // import Navbar from "../components/Navbar";
-// import { useTheme } from "../context/ThemeContext";
-// function Dashboard() {
-//   const { isDarkMode } = useTheme();
-//   return (
-//     <div >
-//       <div >
-//         <div className="p-6">
-//           <h1 className={`text-2xl font-bold mb-6 transition-colors ${isDarkMode ? 'text-white' : 'text-black' }`}>Dashboard</h1>
-
-//           {/* Stats Cards */}
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//             <div className="bg-white shadow rounded-xl p-6">
-//               <h2 className="text-gray-500">Total Users</h2>
-//               <p className="text-2xl font-bold mt-2 text-blue-500">120</p>
-//             </div>
-
-//             <div className="bg-white shadow rounded-xl p-6">
-//               <h2 className="text-gray-500">Total Cards</h2>
-//               <p className="text-3xl font-bold mt-2 text-green-500">85</p>
-//             </div>
-
-//             <div className="bg-white shadow rounded-xl p-6">
-//               <h2 className="text-gray-500">Active Users</h2>
-//               <p className="text-3xl font-bold mt-2 text-yellow-500">60</p>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default Dashboard;
-
-import { useTheme } from '../context/ThemeContext';
-import { FaUsers, FaIdCard, FaEye } from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import { useTheme } from "../context/ThemeContext";
+import { FaUsers, FaIdCard, FaEye } from "react-icons/fa";
 import { HiUserAdd } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
+import { adminAPI } from "../services/api";
 
 function Dashboard() {
   const { isDarkMode } = useTheme();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalCards: 0,
+    todaysScans: 0,
+    todaysSignups: 0
+  });
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    { 
-      title: 'Total Users', 
-      value: '0', 
-      icon: FaUsers, 
-      bgColor: 'bg-blue-100', 
-      iconColor: 'text-blue-600' 
-    },
-    { 
-      title: 'Total Cards', 
-      value: '0', 
-      icon: FaIdCard, 
-      bgColor: 'bg-green-100', 
-      iconColor: 'text-green-600' 
-    },
-    { 
-      title: 'Today\'s Scan', 
-      value: '0', 
-      icon: FaEye, 
-      bgColor: 'bg-purple-100', 
-      iconColor: 'text-purple-600' 
-    },
-    { 
-      title: 'Today\'s Signups', 
-      value: '0', 
-      icon: HiUserAdd, 
-      bgColor: 'bg-orange-100', 
-      iconColor: 'text-orange-600' 
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsResponse, usersResponse] = await Promise.all([
+        adminAPI.getDashboardStats(),
+        adminAPI.getRecentUsers()
+      ]);
+      
+      setStats(statsResponse.data);
+      setRecentUsers(usersResponse.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const statsCards = [
+    {
+      title: "Total Users",
+      value: stats.totalUsers,
+      icon: FaUsers,
+      bgColor: "bg-blue-100",
+      iconColor: "text-blue-600",
+    },
+    {
+      title: "Total Cards",
+      value: stats.totalCards,
+      icon: FaIdCard,
+      bgColor: "bg-green-100",
+      iconColor: "text-green-600",
+    },
+    {
+      title: "Today's Scans",
+      value: stats.todaysScans,
+      icon: FaEye,
+      bgColor: "bg-purple-100",
+      iconColor: "text-purple-600",
+    },
+    {
+      title: "Today's Signups",
+      value: stats.todaysSignups,
+      icon: HiUserAdd,
+      bgColor: "bg-orange-100",
+      iconColor: "text-orange-600",
+    },
   ];
 
-  const recentActivity = [
-    { user: 'John Doe', action: 'Created new card', time: '2 min ago' },
-    { user: 'Jane Smith', action: 'Updated profile', time: '5 min ago' },
-    { user: 'Mike Johnson', action: 'Deleted card', time: '10 min ago' },
-    { user: 'Sarah Wilson', action: 'Logged in', time: '15 min ago' }
-  ];
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`p-6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-black'}`}>
+    <div className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-black"}`}>
       <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <div key={index} className={`p-6 rounded-xl shadow-lg transition-colors ${
-            isDarkMode ? 'bg-gray-800' : 'bg-white'
-          }`}>
+        {statsCards.map((stat, index) => (
+          <div key={index} className={`p-6 rounded-xl shadow-lg transition-colors ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {stat.title}
-                </p>
+                <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>{stat.title}</p>
                 <p className="text-2xl font-bold mt-1">{stat.value}</p>
               </div>
               <div className={`p-3 rounded-full ${stat.bgColor}`}>
@@ -104,28 +97,35 @@ function Dashboard() {
         ))}
       </div>
 
-        {/* Recent Activity */}
-        <div className={`p-6 rounded-xl shadow-lg transition-colors ${
-          isDarkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
-          <h3 className="text-xl font-semibold mb-4">Recent Activity</h3>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between py-2">
-                <div>
-                  <p className="font-medium">{activity.user}</p>
-                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {activity.action}
-                  </p>
-                </div>
-                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {activity.time}
-                </span>
-              </div>
-            ))}
-          </div>
+      {/* Recent Users Table */}
+      <div className={`rounded-xl shadow-lg p-6 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold">Recent Users</h2>
+          <button onClick={() => navigate('/users')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            View All Users
+          </button>
         </div>
-      
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className={`border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
+                <th className="text-left py-3 px-4">Name</th>
+                <th className="text-left py-3 px-4">Email</th>
+                <th className="text-left py-3 px-4">Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentUsers.map((user, index) => (
+                <tr key={index} className={`border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} hover:${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
+                  <td className="py-3 px-4">{user.name}</td>
+                  <td className="py-3 px-4">{user.email}</td>
+                  <td className="py-3 px-4">{user.phone}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
