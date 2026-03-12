@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Cards from './pages/Cards';
+import Admin from './pages/Admin';
 import Navbar from './components/Navbar';
 import Sidebar from './components/SideBar';
 
@@ -32,6 +33,7 @@ function AppContent() {
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/users" element={<Layout><Users /></Layout>} />
         <Route path="/cards" element={<Layout><Cards /></Layout>} />
+        <Route path="/admin" element={<Layout><Admin /></Layout>} />
       </Routes>
     </BrowserRouter>
   );

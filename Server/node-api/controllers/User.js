@@ -18,6 +18,7 @@ export const register = async (req, res) => {
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000,
     ).toString();
+    console.log("Verification Code:",verificationCode);
 
     const newUser = new User({
       email,
@@ -70,7 +71,8 @@ export const login = async (req, res) => {
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000,
     ).toString();
-    console.log(verificationCode);
+    console.log("Verification Code:",verificationCode);
+    
     await User.findByIdAndUpdate(user._id, {
       verificationCode,
       otpExpiresAt: Date.now() + 5 * 60 * 1000,

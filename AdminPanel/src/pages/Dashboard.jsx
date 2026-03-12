@@ -12,7 +12,7 @@ function Dashboard() {
     totalUsers: 0,
     totalCards: 0,
     todaysScans: 0,
-    todaysSignups: 0
+    todaysSignups: 0,
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,13 +25,15 @@ function Dashboard() {
     try {
       const [statsResponse, usersResponse] = await Promise.all([
         adminAPI.getDashboardStats(),
-        adminAPI.getRecentUsers()
+        adminAPI.getRecentUsers(),
       ]);
-      
-      setStats(statsResponse.data);
-      setRecentUsers(usersResponse.data);
+
+      console.log("User Api Response:", usersResponse.data);
+
+      setStats(statsResponse.data.data || {});
+      setRecentUsers(usersResponse.data.data || []);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -70,23 +72,34 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}
+      >
         <div className="text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-black"}`}>
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+    <div
+      className={`min-h-screen mt-16 ${isDarkMode ? "bg-gray-900 text-white" : "text-black"}`}
+    >
+      <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statsCards.map((stat, index) => (
-          <div key={index} className={`p-6 rounded-xl shadow-lg transition-colors ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+          <div
+            key={index}
+            className={`p-6 rounded-xl shadow-lg transition-colors ${isDarkMode ? "bg-gray-800" : "bg-blue-50"}`}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>{stat.title}</p>
+                <p
+                  className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
+                >
+                  {stat.title}
+                </p>
                 <p className="text-2xl font-bold mt-1">{stat.value}</p>
               </div>
               <div className={`p-3 rounded-full ${stat.bgColor}`}>
@@ -98,30 +111,41 @@ function Dashboard() {
       </div>
 
       {/* Recent Users Table */}
-      <div className={`rounded-xl shadow-lg p-6 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+      <div
+        className={`rounded-xl shadow-lg p-6 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}
+      >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">Recent Users</h2>
-          <button onClick={() => navigate('/users')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          <button
+            onClick={() => navigate("/users")}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
             View All Users
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className={`border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
+              <tr
+                className={`border-b  ${isDarkMode ? "border-gray-700 bg-gray-600" : "border-gray-200 bg-blue-50"}`}
+              >
                 <th className="text-left py-3 px-4">Name</th>
                 <th className="text-left py-3 px-4">Email</th>
                 <th className="text-left py-3 px-4">Phone</th>
               </tr>
             </thead>
             <tbody>
-              {recentUsers.map((user, index) => (
-                <tr key={index} className={`border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} hover:${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
-                  <td className="py-3 px-4">{user.name}</td>
-                  <td className="py-3 px-4">{user.email}</td>
-                  <td className="py-3 px-4">{user.phone}</td>
-                </tr>
-              ))}
+              {Array.isArray(recentUsers) &&
+                recentUsers.map((user, index) => (
+                  <tr
+                    key={index}
+                    className={`border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} hover:${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}
+                  >
+                    <td className="py-3 px-4">{user.name}</td>
+                    <td className="py-3 px-4">{user.email}</td>
+                    <td className="py-3 px-4">{user.phone}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

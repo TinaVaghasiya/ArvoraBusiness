@@ -26,7 +26,7 @@ export const getCards = async (req, res) => {
 export const saveCard = async (req, res) => {
   try {
     const imageUrl = req.file
-      ? `${process.env.SERVER_URL}/uploads/${req.file.filename}`
+      ? `/uploads/${req.file.filename}`
       : "";
 
     const userId = req.user.id;
@@ -125,7 +125,7 @@ export const updateCard = async (req, res) => {
         }
       }
 
-      imageUrl = `${process.env.SERVER_URL}/uploads/${req.file.filename}`;
+      imageUrl = `/uploads/${req.file.filename}`;
     }
 
     await Card.findByIdAndUpdate(
