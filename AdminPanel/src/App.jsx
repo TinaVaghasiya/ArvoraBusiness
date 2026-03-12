@@ -1,5 +1,5 @@
 import { ThemeProvider, useTheme } from './context/ThemeContext';
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -11,13 +11,14 @@ import Sidebar from './components/SideBar';
 
 function Layout({ children }) {
   const { isDarkMode } = useTheme();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   return (
-    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-        <Sidebar />
-        <div className="ml-64">
-          <Navbar />
-          <main className="p-6">
+    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-black'}`}>
+        <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+        <div className="lg:ml-64 transition-all duration-300">
+          <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+          <main className="pt-20 px-4 md:px-6 pb-8">
             {children}
           </main>
         </div>

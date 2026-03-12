@@ -14,11 +14,8 @@ export default function LoginPage() {
   const login = async () => {
     try {
       const response = await adminAuthAPI.login(email, password);
-
       const token = response.data.token;
-
       localStorage.setItem("adminToken", token);
-
       navigator("/dashboard");
     } catch (error) {
       alert("Login failed");
@@ -27,136 +24,167 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 to-blue-400 relative flex flex-col items-center overflow-hidden px-4">
-      {/* <img src={image1} alt="illustration" className="absolute inset-0 w-full h-full object-cover" /> */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 relative flex items-center justify-center overflow-hidden px-4">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
 
       {/* Login Card */}
+      <div className="relative z-10 w-full max-w-5xl bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+        {/* Left side - Form */}
+        <div className="w-full md:w-1/2 p-8 md:p-12">
+          {/* Logo/Brand */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-2xl">A</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Admin Panel</h2>
+              <p className="text-xs text-gray-500">Management System</p>
+            </div>
+          </div>
 
-      <div className="relative z-10 w-auto md:w-auto max-w-5xl bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden justify-center mt-28 md:m-auto p-auto md:min-h-auto">
-        {/* Left side */}
-
-        <div className="w-full mt-2 md:w-1/2 p-10 md:p-16 h-auto md:min-h-[430px]">
           {/* Tabs */}
-
-          <div className="flex gap-6 md:gap-10 mb-8">
+          <div className="flex gap-8 mb-8 border-b border-gray-200">
             <button
               onClick={() => setActiveTab("login")}
-              className={`pb-1 ${activeTab === "login" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400"}`}
+              className={`pb-3 font-semibold transition-all ${activeTab === "login" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400 hover:text-gray-600"}`}
             >
               Login
             </button>
-
             <button
               onClick={() => setActiveTab("signup")}
-              className={`pb-1 ${
-                activeTab === "signup"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-400"
-              }`}
+              className={`pb-3 font-semibold transition-all ${activeTab === "signup" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400 hover:text-gray-600"}`}
             >
               Sign Up
             </button>
           </div>
 
-          {/* Form Switch */}
-
+          {/* Form */}
           {activeTab === "login" ? (
-            <>
-              <div className="relative mb-4">
-                <FiMail className="absolute left-4 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Email or username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-full py-2 pl-10 pr-4 bg-gray-50 outline-none text-black"
-                />
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <div className="relative">
+                  <FiMail className="absolute left-4 top-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-xl py-3 pl-12 pr-4 bg-gray-50 outline-none text-gray-900 focus:border-blue-500 focus:bg-white transition-all"
+                  />
+                </div>
               </div>
 
-              <div className="relative mb-2">
-                <FiLock className="absolute left-4 top-3 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-full py-2 pl-10 pr-4 bg-gray-50 outline-none text-black"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-3 text-gray-400"
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-4 top-3.5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-xl py-3 pl-12 pr-12 bg-gray-50 outline-none text-gray-900 focus:border-blue-500 focus:bg-white transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
               </div>
 
-              <p className="text-xs ml-2 text-gray-500 mt-4 cursor-pointer hover:text-gray-700 transition">
-                Forgot your password?
-              </p>
+              <div className="flex items-center justify-between">
+                <label className="flex items-center">
+                  <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
+                <a href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Forgot password?</a>
+              </div>
 
               <button
                 onClick={login}
-                className="mt-6 w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white px-8 py-2 rounded-full transition shadow-md"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                Login
+                Login to Dashboard
               </button>
-            </>
+            </div>
           ) : (
-            <>
-              <div className="relative mb-4">
-                <FiUser className="absolute left-4 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  className="w-full border border-gray-300 rounded-full py-2 pl-10 pr-4 bg-gray-50 outline-none text-black"
-                />
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <div className="relative">
+                  <FiUser className="absolute left-4 top-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Enter your full name"
+                    className="w-full border-2 border-gray-200 rounded-xl py-3 pl-12 pr-4 bg-gray-50 outline-none text-gray-900 focus:border-blue-500 focus:bg-white transition-all"
+                  />
+                </div>
               </div>
 
-              <div className="relative mb-4">
-                <FiMail className="absolute left-4 top-3 text-gray-400" />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className="w-full border border-gray-300 rounded-full py-2 pl-10 pr-4 bg-gray-50 outline-none text-black"
-                />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <div className="relative">
+                  <FiMail className="absolute left-4 top-3.5 text-gray-400" />
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className="w-full border-2 border-gray-200 rounded-xl py-3 pl-12 pr-4 bg-gray-50 outline-none text-gray-900 focus:border-blue-500 focus:bg-white transition-all"
+                  />
+                </div>
               </div>
 
-              <div className="relative mb-4">
-                <FiLock className="absolute left-4 top-3 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  className="w-full border border-gray-300 rounded-full py-2 pl-10 pr-4 bg-gray-50 outline-none text-black"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-3 text-gray-400"
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-4 top-3.5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a password"
+                    className="w-full border-2 border-gray-200 rounded-xl py-3 pl-12 pr-12 bg-gray-50 outline-none text-gray-900 focus:border-blue-500 focus:bg-white transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
               </div>
 
               <button
                 onClick={login}
-                className="mt-6 w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white px-8 py-2 rounded-full transition shadow-md"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                Sign Up
+                Create Account
               </button>
-            </>
+            </div>
           )}
         </div>
 
-        {/* Right side */}
-
-        <div className="hidden md:w-1/2  md:flex">
-          <img
-            src={loginimage}
-            alt="illustration"
-            className=" md:min-w-[300px] "
-          />
-          {/* <div className="text-white text-xl">Illustration</div> */}
+        {/* Right side - Image */}
+        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-purple-600 p-12 items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-10 right-10 w-40 h-40 bg-white rounded-full"></div>
+            <div className="absolute bottom-10 left-10 w-32 h-32 bg-white rounded-full"></div>
+          </div>
+          <div className="relative z-10 text-center text-white">
+            <img
+              src={loginimage}
+              alt="Admin Illustration"
+              className="w-full max-w-md rounded-2xl shadow-2xl mb-6"
+            />
+            <h3 className="text-2xl font-bold mb-3">Welcome Back!</h3>
+            <p className="text-blue-100">Manage your business with powerful admin tools</p>
+          </div>
         </div>
       </div>
     </div>
