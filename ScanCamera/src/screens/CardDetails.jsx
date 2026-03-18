@@ -18,7 +18,8 @@ import {
   TextInput,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import "../utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BASE_API } from "../utils/api";
 
 export default function CardDetails({ route }) {
   const card = route?.params?.card;
@@ -59,11 +60,15 @@ export default function CardDetails({ route }) {
 
   const handleAddAddress = async () => {
     try {
+      const token = await AsyncStorage.getItem("authToken");
       const response = await fetch(
         `${BASE_API}/api/cards/update-card/${card._id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ address: tempaddress }),
         },
       );
@@ -81,11 +86,15 @@ export default function CardDetails({ route }) {
 
   const handleDeleteAddress = async () => {
     try {
+      const token = await AsyncStorage.getItem("authToken");
       const response = await fetch(
         `${BASE_API}/api/cards/update-card/${card._id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ address: "" }),
         },
       );
@@ -101,11 +110,15 @@ export default function CardDetails({ route }) {
 
   const handleAddNote = async () => {
     try {
+      const token = await AsyncStorage.getItem("authToken");
       const response = await fetch(
         `${BASE_API}/api/cards/update-card/${card._id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ note: tempNote }),
         },
       );
@@ -123,11 +136,15 @@ export default function CardDetails({ route }) {
 
   const handleDeleteNote = async () => {
     try {
+      const token = await AsyncStorage.getItem("authToken");
       const response = await fetch(
-        `http://192.168.1.8:5000/api/cards/update-card/${card._id}`,
+        `${BASE_API}/api/cards/update-card/${card._id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ note: "" }),
         },
       );
@@ -143,10 +160,15 @@ export default function CardDetails({ route }) {
 
   const handleDeleteCard = async () => {
     try {
+      const token = await AsyncStorage.getItem("authToken");
       const response = await fetch(
         `${BASE_API}/api/cards/delete-card/${card._id}`,
         {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
       );
       const data = await response.json();
@@ -174,7 +196,12 @@ export default function CardDetails({ route }) {
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
             <Text
-              style={[styles.name,!card.name && card.company && { fontSize: 19, fontWeight: "600" }, !card.designation && { marginTop: 8 }]}
+              style={[
+                styles.name,
+                !card.name &&
+                  card.company && { fontSize: 19, fontWeight: "600" },
+                !card.designation && { marginTop: 8 },
+              ]}
               numberOfLines={1}
             >
               {card.name ? card.name : card.company ? card.company : card.email}
@@ -223,7 +250,7 @@ export default function CardDetails({ route }) {
         {card?.imageUrl ? (
           <View style={styles.imageContainer}>
             <Image
-              source={{ uri: card.imageUrl }}
+              source={{ uri: `${BASE_API}${card.imageUrl}` }}
               style={styles.cardImage}
               resizeMode="contain"
             />
@@ -234,45 +261,39 @@ export default function CardDetails({ route }) {
         <View style={[styles.card, !card.company && { marginTop: 22 }]}>
           <Text style={styles.sectionTitle}>Contact Information</Text>
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoBlock}>
-              <Text style={styles.label}>Mobile</Text>
-              {card.phone?.split("\n").length > 1 ? (
-                card.phone.split("\n").map((num, index) => (
+          <View>
+            {card.phone?.split("\n").map((num, index) => (
+              <View key={index}>
+                <View style={styles.infoRow}>
+                  <View style={styles.infoBlock}>
+                    <Text style={styles.label}>Mobile {index + 1}</Text>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => Linking.openURL(`tel:${num.trim()}`)}
+                    >
+                      <Text style={styles.value}>{num.trim()}</Text>
+                    </TouchableOpacity>
+                  </View>
                   <TouchableOpacity
-                    key={index}
-                    activeOpacity={0.7}
                     onPress={() => Linking.openURL(`tel:${num.trim()}`)}
                   >
-                    <Text style={styles.value}>{num.trim()}</Text>
+                    <Ionicons
+                      name="call"
+                      size={18}
+                      color="#2563EB"
+                      style={{
+                        backgroundColor: "#e6edf7",
+                        borderRadius: 55,
+                        width: 35,
+                        height: 35,
+                        padding: 9,
+                        marginTop: 5,
+                      }}
+                    />
                   </TouchableOpacity>
-                ))
-              ) : (
-                <TouchableOpacity onPress={handleCall}>
-                  <Text style={styles.value}>{card.phone}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity
-              onPress={() =>
-                Linking.openURL(`tel:${card.phone?.split(",")[0].trim()}`)
-              }
-            >
-              <Ionicons
-                name="call"
-                size={20}
-                color="#2563EB"
-                style={{
-                  marginRight: 0,
-                  backgroundColor: "#e6edf7",
-                  borderRadius: 55,
-                  width: 35,
-                  height: 35,
-                  padding: 8,
-                  marginTop: 5,
-                }}
-              />
-            </TouchableOpacity>
+                </View>
+              </View>
+            ))}
           </View>
 
           {card.email ? <View style={styles.divider} /> : null}
@@ -293,11 +314,35 @@ export default function CardDetails({ route }) {
                   borderRadius: 55,
                   width: 35,
                   height: 35,
-                  padding: 8,
+                  padding: 7.5,
                   marginTop: 5,
                 }}
               />
             </TouchableOpacity>
+          ) : null}
+          {card.website ? (
+            <View>
+              <View style={styles.divider} />
+              <TouchableOpacity style={styles.infoRow} onPress={handleWebsite}>
+                <View style={styles.infoBlock}>
+                  <Text style={styles.label}>Website</Text>
+                  <Text style={styles.value}>{card.website}</Text>
+                </View>
+                <Ionicons
+                  name="globe-outline"
+                  size={22}
+                  color="#2563EB"
+                  style={{
+                    marginRight: 0,
+                    backgroundColor: "#e6edf7",
+                    borderRadius: 55,
+                    width: 35,
+                    height: 35,
+                    padding: 6.5,
+                  }}
+                />
+              </TouchableOpacity>
+            </View>
           ) : null}
         </View>
 
@@ -348,29 +393,28 @@ export default function CardDetails({ route }) {
             )}
           </View>
 
-          <View style={styles.addressRow}>
-            <TouchableOpacity
-              style={styles.addressIcon}
-              onPress={handleOpenLocation}
-            >
-              <Ionicons name="location-outline" size={20} color="#2563EB" />
-            </TouchableOpacity>
+          <TouchableOpacity onPress={handleOpenLocation}>
+            <View style={styles.addressRow}>
+              <TouchableOpacity style={styles.addressIcon}>
+                <Ionicons name="location-outline" size={20} color="#2563EB" />
+              </TouchableOpacity>
 
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.addressLabel,
-                  !card.company && { marginBottom: -3 },
-                ]}
-              >
-                {card.company}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.addressLabel,
+                    !card.company && { marginBottom: -3 },
+                  ]}
+                >
+                  {card.company}
+                </Text>
 
-              <Text style={styles.addressValue}>
-                {currentAddress ? currentAddress : "No address available"}
-              </Text>
+                <Text style={styles.addressValue}>
+                  {currentAddress ? currentAddress : "No address available"}
+                </Text>
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Notes Card */}
@@ -515,7 +559,7 @@ const styles = StyleSheet.create({
   },
 
   nameheader: {
-    backgroundColor: "#618af0",
+    backgroundColor: "#1E3A8A",
     paddingTop: 28,
     paddingBottom: 14,
     paddingHorizontal: 18,
@@ -587,6 +631,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 16,
     color: "#2563EB",
+    marginBottom: 14,
   },
 
   addressRow: {
@@ -621,6 +666,7 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#E5E7EB",
     marginVertical: 12,
+    marginBottom: 15,
   },
 
   header: {

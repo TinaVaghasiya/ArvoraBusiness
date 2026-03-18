@@ -12,6 +12,9 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { FontAwesome5 } from "@expo/vector-icons";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { BASE_API } from "../utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
@@ -20,14 +23,17 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleRegister = async () => {
+    if (!firstName || !lastName || !email || !phone) {
+      setError("Please fill in all the required fields.");
+      return;
+    }
+    setError("");
     try {
-      if (!firstName || !lastName || !email || !phone) {
-        Alert.alert("Please fill all required fields");
-        return;
-      }
-
+      setLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/register`, {
         method: "POST",
         headers: {
@@ -48,7 +54,15 @@ export default function RegisterScreen() {
         return;
       }
 
-      Alert.alert("Success", "Account created successfully!");
+      if (data.token) {
+        await AsyncStorage.setItem("userToken", data.token);
+      }
+
+      if (data.user) {
+        await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+      }
+
+      // Alert.alert("Success", "Account created successfully!");
 
       navigation.replace("OtpScreen", {
         identifier: email,
@@ -58,6 +72,8 @@ export default function RegisterScreen() {
     } catch (error) {
       console.error("Error registering:", error);
       Alert.alert("Error", "An error occurred while registering");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,38 +97,44 @@ export default function RegisterScreen() {
           
           <View style={styles.row}>
             <TextInput
-              placeholder="First Name"
+              placeholder="First Name *"
               placeholderTextColor="#999"
               style={styles.inputHalf}
               value={firstName}
               onChangeText={setFirstName}
+              editable={!loading}
             />
             <TextInput
-              placeholder="Last Name"
+              placeholder="Last Name *"
               placeholderTextColor="#999"
               style={styles.inputHalf}
               value={lastName}
               onChangeText={setLastName}
+              editable={!loading}
             />
           </View>
 
           <TextInput
-            placeholder="E-mail"
+            placeholder="E-mail *"
             placeholderTextColor="#999"
             style={styles.input}
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            editable={!loading}
           />
 
           <TextInput
-            placeholder="+91 Mobile Number"
+            placeholder="+91 XXXXXXXXXX *"
             placeholderTextColor="#999"
             style={styles.input}
             keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
+            editable={!loading}
+            maxLength={10}
           />
+          
 
           <TextInput
             placeholder="Company Name (Optional)"
@@ -120,12 +142,26 @@ export default function RegisterScreen() {
             style={styles.input}
             value={company}
             onChangeText={setCompany}
+            editable={!loading}
           />
         </View>
+        <Text style={{ color: "red",fontSize: 14, marginLeft: 20, textAlign: "start" }}>* Fields are required</Text>
+        
+        {error ?
+        <View style={{flexDirection: "row", alignItems: "center", marginLeft: 20}}>
+          <MaterialIcons name="error-outline" size={20} color="red" />
+        <Text style={{ color: "red",fontSize: 13, marginLeft: 8, textAlign: "start" }}>
+          {error}</Text> 
+        </View>: null}
 
         {/* Sign Up Button */}
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity 
+          style={[styles.button, loading && styles.buttonDisabled]} 
+          onPress={handleRegister}
+          disabled={loading}
+        >
+          <Text style={[styles.buttonText, loading && { opacity: 0.5 , backgroundColor: "#1E3A8A"}]}>
+            {loading ? "Signing Up..." : "Sign Up"}</Text>
         </TouchableOpacity>
 
          <View style={styles.bottomWrapper}>
@@ -156,14 +192,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f9f7f7",
-
   },
    
   titleContainer: {
     textAlign: "center",
     width: "100%",
     height: 220,
-    backgroundColor: "#4c7de8",
+    backgroundColor: "#1E3A8A",
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
     shadowColor: "#000",
@@ -175,13 +210,12 @@ const styles = StyleSheet.create({
   },
 
   iconCircle: {
-    backgroundColor: "#6a9bf1",
+    backgroundColor: "#4A61A1",
     width: 75,
     height: 75,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    // marginBottom: 20,
     marginTop: 30,
   },
 
@@ -227,13 +261,17 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    backgroundColor: "#3973df",
+    backgroundColor: "#1B347C",
     paddingVertical: 14,
     borderRadius: 14,
     alignSelf: "center",
     elevation: 3,
     marginTop: 19,
     width: "40%",
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
   },
 
   buttonText: {
@@ -256,23 +294,22 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: "100%",
     height: 170,
-    backgroundColor: "#d6e5fd",
+    backgroundColor: "#E5E6F3",
     borderTopLeftRadius: 140,
     borderTopRightRadius: 120,
   },
 
   bottomImage: {
-    width: 220,
+    width: 210,
     height: 160,
     position: "absolute",
-    bottom: 90,
-    marginLeft: 40,
+    bottom: 80,
   },
   bottomSection: {
     flexDirection:"row",
     alignItems: "center",
     position: "absolute",
-    bottom: 60,
+    bottom: 50,
     marginLeft: 20,
   },
   bottomText: {

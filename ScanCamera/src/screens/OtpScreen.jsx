@@ -8,7 +8,8 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import "../utils/api";
+import {BASE_API} from "../utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function OtpScreen({ navigation, route }) {
   const identifier = route?.params?.identifier;
@@ -17,6 +18,7 @@ export default function OtpScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(30);
   const [reSend, setResend] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (timer === 0) {
@@ -33,13 +35,9 @@ export default function OtpScreen({ navigation, route }) {
 
   const handleChange = (text, index) => {
     if (!/^[0-9]?$/.test(text)) return;
-
     const newOtp = [...otp];
-
     newOtp[index] = text;
-
     setOtp(newOtp);
-
     if (text && index < 5) {
       inputs.current[index + 1].focus();
     }
@@ -55,9 +53,10 @@ export default function OtpScreen({ navigation, route }) {
     const code = otp.join("");
 
     if (code.length !== 6) {
-      Alert.alert("Enter 6 digit OTP");
+      setError("Please enter 6-digit OTP");
       return;
     }
+    setError("");
     try {
       setLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/verify-otp`, {
@@ -68,11 +67,14 @@ export default function OtpScreen({ navigation, route }) {
         body: JSON.stringify({ identifier, otp: code }),
       });
       const data = await response.json();
+      
+      console.log("Login Response:", data);
       if (!response.ok) {
+        setLoading(false);
         Alert.alert("Login Failed", data.message);
         return;
       }
-      Alert.alert("Login Successfully");
+      await AsyncStorage.setItem("authToken", data.token);
       navigation.replace("Home");
     } catch (error) {
       Alert.alert("Error", "Something went wrong");
@@ -135,6 +137,7 @@ export default function OtpScreen({ navigation, route }) {
           />
         ))}
       </View>
+      {error ? <Text style={{ color: "red", fontSize: 13, textAlign: "start", marginTop: 10 }}>{error}</Text> : null}
       <View>
         <TouchableOpacity
           style={styles.resend}
@@ -152,8 +155,8 @@ export default function OtpScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={verifyOtp}>
-        <Text style={styles.buttonText}>Verify OTP</Text>
+      <TouchableOpacity style={[styles.button, loading && { opacity: 0.7 , backgroundColor: "#94a3b8"}]} onPress={verifyOtp} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? "Verifying..." : "Verify OTP"}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -174,8 +177,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 10,
-    marginTop: 80,
+    marginBottom: 20,
+    marginTop: 60,
   },
 
   subtitle: {

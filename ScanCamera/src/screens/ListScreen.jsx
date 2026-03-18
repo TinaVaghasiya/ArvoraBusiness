@@ -18,9 +18,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Modal } from "react-native";
-import "../utils/api";
+import {BASE_API} from "../utils/api";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function ListScreen() {
   const defaultFields = ["name", "phone", "company_or_email"];
   const navigation = useNavigation();
@@ -41,12 +43,25 @@ export default function ListScreen() {
   const fetchCards = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BASE_API}/api/cards/get-cards`);
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        console.log("No auth token found");
+        return;
+      }
+      const response = await fetch(`${BASE_API}/api/cards/get-cards`,{
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       console.log("📥 Cards from backend:", data);
-      setAllCards(data.data);
+      if (data.success){
+        setAllCards(data.data);
       const sorted = sortCards(data.data, selectedSort);
       setCards(sorted);
+      }
     } catch (error) {
       console.log("❌ Server Error:", error);
     } finally {
@@ -154,7 +169,7 @@ export default function ListScreen() {
     navigation.setOptions({
       headerStyle: {
         height: 95,
-        backgroundColor: "#618af0",
+        backgroundColor: "#1E3A8A",
         paddingTop: 45,
         paddingHorizontal: 16,
         flexDirection: "row",

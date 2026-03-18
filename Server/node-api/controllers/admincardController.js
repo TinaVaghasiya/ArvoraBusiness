@@ -62,3 +62,13 @@ export const updateAdminCard = async (req, res) => {
     });
   }
 };
+
+export const getCardsByUser = async (req, res) => {
+  try {
+    const cards = await Card.find({ user: req.params.id }).sort({ createdAt: -1 });
+    res.json({ success: true, data: { cards, total: cards.length } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

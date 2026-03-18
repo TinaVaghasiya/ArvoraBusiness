@@ -1,11 +1,24 @@
-import { FaMoon, FaBell } from "react-icons/fa";
-import { IoSunnySharp } from "react-icons/io5";
+import { useState, useEffect } from 'react';
 import { LuMoon, LuSun } from "react-icons/lu";
 import { HiMenu } from "react-icons/hi";
 import { useTheme } from "../context/ThemeContext";
 
-function Navbar({ toggleSidebar }) {
+export default function Navbar({ toggleSidebar }) {
   const { isDarkMode, setIsDarkMode } = useTheme();
+
+  const [adminData, setAdminData] = useState({
+    username: "Admin"
+  });
+
+  useEffect(() => {
+    fetchAdminData();
+  }, []);
+
+   const fetchAdminData = () => {
+    const username = localStorage.getItem("adminUsername") || "Admin";
+    console.log("Fetched admin username:", username);
+    setAdminData({ username });
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -25,7 +38,7 @@ function Navbar({ toggleSidebar }) {
         </button>
         <div>
           <h2 className={`text-base md:text-xl font-semibold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-            {getGreeting()}, Admin!
+            Hi {adminData.username}, {getGreeting()}!
           </h2>
           <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -52,13 +65,11 @@ function Navbar({ toggleSidebar }) {
 
         <div className={`flex items-center gap-2 p-1.5 pr-3 rounded-xl ${isDarkMode ? "bg-gray-800" : "bg-gray-100"}`}>
           <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">A</span>
+            <span className="text-white font-semibold text-sm">{adminData.username.charAt(0).toUpperCase()}</span>
           </div>
-          <span className={`hidden md:block text-sm font-medium ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>Admin</span>
+          <span className={`hidden md:block text-sm font-medium ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>{adminData.username}</span>
         </div>
       </div>
     </div>
   );
-}
-
-export default Navbar;
+};

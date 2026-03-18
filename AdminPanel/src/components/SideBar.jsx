@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FaUserGroup } from "react-icons/fa6";
+import { FaUserGroup, FaChevronRight, FaChevronDown } from "react-icons/fa6";
 import { LiaIdCardSolid } from "react-icons/lia";
 import { TbLayoutDashboard } from "react-icons/tb";
 import { CgLogOut } from "react-icons/cg";
 import { IoSettingsOutline } from "react-icons/io5";
-import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 import { MdAdminPanelSettings } from "react-icons/md";
 import { useTheme } from "../context/ThemeContext";
 
-function Sidebar({ isOpen, setIsOpen }) {
+export default function Sidebar({ isOpen, setIsOpen }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { isDarkMode } = useTheme();
 
@@ -25,7 +24,7 @@ function Sidebar({ isOpen, setIsOpen }) {
 
       {/* Sidebar */}
       <div
-        className={`w-64 h-screen transition-all duration-300 fixed z-40 ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${isDarkMode ? "bg-gray-900 border-r border-gray-800" : "bg-white border-r border-gray-200"} shadow-xl overflow-y-auto`}
+        className={`w-64 h-screen transition-all duration-300 fixed z-40 flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${isDarkMode ? "bg-gray-900 border-r border-gray-800" : "bg-white border-r border-gray-200"} shadow-xl overflow-y-auto`}
       >
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
@@ -47,7 +46,7 @@ function Sidebar({ isOpen, setIsOpen }) {
           </div>
         </div>
 
-        <nav className="px-4 space-y-2 pb-6">
+        <nav className="px-4 md:space-y-2 space-y-1 flex-1 overflow-y-auto pb-6">
           <NavLink
             to="/dashboard"
             onClick={() => setIsOpen(false)}
@@ -56,7 +55,7 @@ function Sidebar({ isOpen, setIsOpen }) {
             }
           >
             <TbLayoutDashboard size={20} />
-            <span className="font-medium">Dashboard</span>
+            <span className="font-medium text-sm md:text-base">Dashboard</span>
           </NavLink>
 
           <NavLink
@@ -67,7 +66,7 @@ function Sidebar({ isOpen, setIsOpen }) {
             }
           >
             <FaUserGroup size={20} />
-            <span className="font-medium">Users</span>
+            <span className="font-medium text-sm md:text-base">Users</span>
           </NavLink>
 
           <NavLink
@@ -78,7 +77,7 @@ function Sidebar({ isOpen, setIsOpen }) {
             }
           >
             <LiaIdCardSolid size={20} />
-            <span className="font-medium">Cards</span>
+            <span className="font-medium text-sm md:text-base">Cards</span>
           </NavLink>
 
           <div>
@@ -88,7 +87,7 @@ function Sidebar({ isOpen, setIsOpen }) {
             >
               <div className="flex items-center gap-3">
                 <IoSettingsOutline size={20} />
-                <span className="font-medium">Settings</span>
+                <span className="font-medium text-sm md:text-base">Settings</span>
               </div>
               {settingsOpen ? (
                 <FaChevronDown size={12} />
@@ -107,32 +106,33 @@ function Sidebar({ isOpen, setIsOpen }) {
                   }
                 >
                   <MdAdminPanelSettings size={18} />
-                  <span className="text-sm font-medium">Admin</span>
+                  <span className="md:text-sm text-xs font-medium">Admin</span>
                 </NavLink>
               </div>
             )}
           </div>
 
-          <div className={`absolute bottom-0 left-0 right-0 p-4 border-t backdrop-blur-sm ${isDarkMode ? "border-gray-800/50" : "border-gray-200/50" }`}>
+          <div className={`md:absolute md:bottom-0 md:left-0 md:right-0 md:p-4 ml-0 mt-auto border-t backdrop-blur-sm ${isDarkMode ? "border-gray-800/50" : "border-gray-200/50"}`}>
             <NavLink
               to="/"
-              onClick={() => setIsOpen(false)}
-              className={`group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 hover:shadow-xl ${
-                isDarkMode
+              onClick={() => {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminUsername');
+              }}
+              className={`group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 hover:shadow-xl ${isDarkMode
                   ? "text-red-300 hover:bg-red-900/30 hover:shadow-red-500/20"
                   : "text-red-700 hover:bg-orange-50 hover:shadow-red-500/20 hover:shadow-lg"
-              }`}
+                }`}
             >
               <div className="p-2 rounded-lg bg-transparent group-hover:bg-red-400/10">
-              <CgLogOut size={20} />
+                <CgLogOut size={20} />
               </div>
-              <span className="font-medium">Logout</span>
+              <span className="font-medium text-sm md:text-base">Logout</span>
             </NavLink>
           </div>
         </nav>
       </div>
     </>
   );
-}
-
-export default Sidebar;
+};

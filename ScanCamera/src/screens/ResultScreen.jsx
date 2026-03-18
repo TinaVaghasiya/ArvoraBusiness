@@ -8,8 +8,9 @@ import {
   View,
   Image,
 } from "react-native";
-import "../utils/api";
+import { BASE_API } from "../utils/api";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function ResultScreen({ route, navigation }) {
   const {
     name: scannedName,
@@ -17,6 +18,7 @@ export default function ResultScreen({ route, navigation }) {
     company: scannedCompany,
     email: scannedEmail,
     phone: scannedPhone,
+    website: scannedWebsite,
     address: scannedAddress,
     imageUrl,
   } = route.params;
@@ -27,25 +29,29 @@ export default function ResultScreen({ route, navigation }) {
   const [email, setEmail] = useState(scannedEmail);
   const [address, setAddress] = useState(scannedAddress);
   const [note, setNote] = useState("");
-  const formatPhoneNumbers = (phones) => {
-    return phones
-      ?.split("\n") 
-      .map((num) => num.trim()) 
-      .filter(Boolean) 
-      .map((num) => {
-        if (num.startsWith("+91")) return num;
+  const [phone, setPhone] = useState(scannedPhone);
+  const [website, setWebsite] = useState(scannedWebsite);
 
-        const clean = num.replace(/^0+/, "");
-
-        return `+91 ${clean}`;
-      })
-      .join("\n"); 
+  const handleNameChange = (text) => {
+    setName(text.replace(/\d/g, ''));
   };
 
-  const [phone, setPhone] = useState(formatPhoneNumbers(scannedPhone));
+  const handlePhoneChange = (text) => {
+    setPhone(text.replace(/[a-zA-Z]/g, ''));
+  };
 
   const handleSave = async () => {
+    if (!name || !name.trim()) {
+      Alert.alert("Required", "Please enter the name");
+      return;
+    }
     try {
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        Alert.alert("Error", "Please login again.");
+        navigation.replace("LoginScreen");
+        return;
+      }
       const formData = new FormData();
 
       formData.append("name", name);
@@ -53,6 +59,7 @@ export default function ResultScreen({ route, navigation }) {
       formData.append("company", company);
       formData.append("email", email);
       formData.append("phone", phone);
+      formData.append("website", website);
       formData.append("address", address);
       formData.append("note", note);
 
@@ -67,7 +74,9 @@ export default function ResultScreen({ route, navigation }) {
 
         {
           method: "POST",
-
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         },
       );
@@ -80,6 +89,7 @@ export default function ResultScreen({ route, navigation }) {
         setCompany("");
         setEmail("");
         setPhone("");
+        setWebsite("");
         setAddress("");
         setNote("");
 
@@ -117,7 +127,7 @@ export default function ResultScreen({ route, navigation }) {
         <View style={styles.formCard}>
           <Text style={styles.label}>Full Name</Text>
 
-          <TextInput style={styles.input} value={name} onChangeText={setName} />
+          <TextInput style={styles.input} value={name} onChangeText={handleNameChange} />
 
           <Text style={styles.label}>Designation</Text>
 
@@ -149,9 +159,19 @@ export default function ResultScreen({ route, navigation }) {
           <TextInput
             style={styles.input}
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={handlePhoneChange}
             keyboardType="phone-pad"
             multiline={true}
+          />
+
+          <Text style={styles.label}>Website</Text>
+
+          <TextInput
+            style={styles.input}
+            value={website}
+            onChangeText={setWebsite}
+            keyboardType="url"
+            autoCapitalize="none"
           />
 
           <Text style={styles.label}>Address</Text>

@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from "react";
+import React, {useState } from "react";
 import {
   View,
   Text,
@@ -14,18 +14,23 @@ import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "@expo/vector-icons/Entypo";
 import Fontisto from "@expo/vector-icons/Fontisto";
-import "../utils/api";
+import {BASE_API} from "../utils/api";
 
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigation = useNavigation();
 
   const handleSend = async () => {
-    try {
+    
       if (!identifier) {
-        Alert.alert("Please enter your email or phone number");
+        setError("Please enter your email or phone number.");
         return;
       }
+      setError("");
+      try {
+        setLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -38,7 +43,7 @@ export default function LoginScreen() {
         Alert.alert("Login Failed", data.message);
         return;
       }
-      Alert.alert("Success", " OTP sent to your email.");
+      // Alert.alert("Success", " OTP sent to your email.");
       navigation.replace("OtpScreen", {
         identifier: identifier,
         user: data.user,
@@ -46,6 +51,8 @@ export default function LoginScreen() {
     } catch (error) {
       console.error("Error logging in:", error);
       Alert.alert("Error", "An error occurred while logging in");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,9 +93,10 @@ export default function LoginScreen() {
               keyboardType="email-address"
             />
           </View>
+          {error ? <Text style={{ color: "red",fontSize: 13, textAlign: "start", marginTop: 10 }}>{error}</Text> : null}
 
-          <TouchableOpacity style={styles.button} onPress={handleSend}>
-            <Text style={styles.buttonText}>Send OTP</Text>
+          <TouchableOpacity style={[styles.button, loading && { opacity: 0.5, backgroundColor: "#1E3A8A" }]} onPress={handleSend} disabled={loading}>
+            <Text style={styles.buttonText}>{loading ? "Sending..." : "Send OTP"}</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.background}></View>
@@ -125,7 +133,7 @@ const styles = StyleSheet.create({
   topHeader: {
     width: "100%",
     height: 280,
-    backgroundColor: "#4c7de8",
+    backgroundColor: "#1E3A8A",
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
     justifyContent: "center",
@@ -137,7 +145,7 @@ const styles = StyleSheet.create({
   },
 
   iconCircle: {
-    backgroundColor: "#6a9bf1",
+    backgroundColor: "#4A61A1",
     width: 80,
     height: 80,
     borderRadius: 40,
@@ -201,7 +209,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   button: {
-    backgroundColor: "#3973df",
+    backgroundColor: "#1B347C",
     paddingVertical: 12,
     paddingHorizontal: 45,
     borderRadius: 12,
@@ -229,7 +237,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: "100%",
     height: 170,
-    backgroundColor: "#d6e5fd",
+    backgroundColor: "#E5E6F3",
     borderTopLeftRadius: 140,
     borderTopRightRadius: 120,
   },

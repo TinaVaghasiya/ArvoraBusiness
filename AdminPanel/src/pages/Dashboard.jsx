@@ -5,7 +5,7 @@ import { HiUserAdd } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import { adminAPI } from "../services/api";
 
-function Dashboard() {
+export default function Dashboard() {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -44,7 +44,7 @@ function Dashboard() {
       title: "Total Users",
       value: stats.totalUsers,
       icon: FaUsers,
-      gradient: "from-blue-500 to-blue-600",
+      gradient: "from-blue-900 to-blue-600",
       lightBg: "bg-blue-50",
       darkBg: "bg-blue-500/10",
       iconColor: "text-blue-600",
@@ -99,9 +99,9 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen md:mt-6">
+    <div className="min-h-screen md:mt-6 mt-3">
       <div className="mb-4">
-        <h1 className={`text-lg md:text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-gray-900"}`}>
+        <h1 className={`text-xl md:text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-gray-900"}`}>
           Dashboard Overview
         </h1>
         <p className={`text-xs md:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
@@ -109,11 +109,17 @@ function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 md:gap-4 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4">
         {statsCards.map((stat, index) => (
           <div
             key={index}
-            className={`relative overflow-hidden rounded-lg p-2.5 md:p-5 hover:shadow-lg hover:translate-y-1  ${
+            onClick={() => {
+              if (stat.title === "Total Users") navigate("/users");
+              else if (stat.title === "Total Cards") navigate("/cards");
+              else if (stat.title === "Today's Scans") navigate("/cards?filter=todayScans");
+              else if (stat.title === "Today's Signups") navigate("/users?filter=todaySignups");
+            }}
+            className={`relative overflow-hidden rounded-lg p-2.5 md:p-5 hover:shadow-lg hover:translate-y-1 cursor-pointer ${
               isDarkMode 
                 ? "bg-gray-800 shadow hover:shadow-gray-400/30 hover:shadow-md" 
                 : "bg-white shadow-sm hover:shadow-blue-400/30 hover:shadow-md"
@@ -130,7 +136,7 @@ function Dashboard() {
             </div>
             
             <div>
-              <p className={`text-[10px] md:text-sm font-medium mb-0.5 md:mb-1 leading-tight ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+              <p className={`text-[10px] md:text-sm text-xs font-medium mb-0.5 md:mb-1 leading-tight ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
                 {stat.title}
               </p>
               <p className={`text-base md:text-2xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
@@ -138,7 +144,7 @@ function Dashboard() {
               </p>
             </div>
 
-            <div className={`absolute bottom-0 right-0 w-10 h-10 md:w-16 md:h-16 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-tl-full`}></div>
+            <div className={`absolute bottom-0 right-0 w-10 h-10 md:w-20 md:h-20 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-tl-full`}></div>
           </div>
         ))}
       </div>
@@ -171,17 +177,17 @@ function Dashboard() {
           <table className="w-full">
             <thead>
               <tr className={`${isDarkMode ? "bg-gray-700/50" : "bg-gray-50"}`}>
-                <th className={`text-left py-2.5 px-3 md:px-4 text-[10px] md:text-xs font-semibold uppercase tracking-wide ${
+                <th className={`text-left py-2 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold uppercase tracking-wide ${
                   isDarkMode ? "text-gray-300" : "text-gray-700"
                 }`}>
                   User
                 </th>
-                <th className={`text-left py-2.5 px-3 md:px-4 text-[10px] md:text-xs font-semibold uppercase tracking-wide ${
+                <th className={`text-left py-2 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold uppercase  tracking-wide ${
                   isDarkMode ? "text-gray-300" : "text-gray-700"
                 }`}>
                   Email
                 </th>
-                <th className={`text-left py-2.5 px-3 md:px-4 text-[10px] md:text-xs font-semibold uppercase tracking-wide hidden md:table-cell ${
+                <th className={`text-left py-2 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold uppercase  tracking-wide ${
                   isDarkMode ? "text-gray-300" : "text-gray-700"
                 }`}>
                   Phone
@@ -201,16 +207,18 @@ function Dashboard() {
                   >
                     <td className={`py-2.5 px-3 md:px-4 ${isDarkMode ? "text-gray-200" : "text-gray-900"}`}>
                       <div className="flex items-center gap-2 md:gap-2.5">
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs md:text-sm flex-shrink-0">
-                          {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-[10px] md:text-sm">
+                            {user.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-xs md:text-sm truncate max-w-[80px] md:max-w-none">
+                            {user.name || 'N/A'}
+                          </span>
                         </div>
-                        <span className="font-medium text-xs md:text-sm">{user.name || 'N/A'}</span>
-                      </div>
                     </td>
-                    <td className={`py-2.5 px-3 md:px-4 text-xs md:text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+                    <td className={`py-2 md:py-4 px-4 md:px-6 text-xs md:text-sm  sm:table-cell ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
                       {user.email || 'N/A'}
                     </td>
-                    <td className={`py-2.5 px-3 md:px-4 text-xs md:text-sm hidden md:table-cell ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+                    <td className={`py-2 md:py-4 px-4 md:px-6 text-xs md:text-sm  sm:table-cell ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
                       {user.phone || 'N/A'}
                     </td>
                   </tr>
@@ -230,6 +238,4 @@ function Dashboard() {
       </div>
     </div>
   );
-}
-
-export default Dashboard;
+};

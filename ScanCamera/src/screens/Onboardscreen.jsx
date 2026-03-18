@@ -2,15 +2,16 @@ import { View, Text, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect } from "react";
 
-export default function OpeningScreen() {
+export default function OpeningScreen({ route }) {
   const navigation = useNavigation();
+  const destination = route.params?.destination || "LoginScreen";
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace("LoginScreen");
+      navigation.replace(destination);
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, destination]);
   return (
     <View style={styles.container}>
       <Text style={styles.logoText}>arvora.business</Text>
@@ -21,7 +22,7 @@ export default function OpeningScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#618af0',
+    backgroundColor: '#1E3A8A',
     alignItems: "center",
     justifyContent: "center",
   },

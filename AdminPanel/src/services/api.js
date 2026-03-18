@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_BASE_URL = 'http://192.168.1.35:5000/api';
+export const API_BASE_URL = 'http://192.168.1.18:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -18,6 +18,9 @@ api.interceptors.request.use((config) => {
 export const adminAuthAPI = {
   login: (email, password) => api.post('/admin/login', { email, password }),
   verifyToken: () => api.get('/admin/verify'),
+  sendOTP: (email) => api.post('/admin/forgot-password/send-otp', { email }),
+  verifyOTP: (email, otp) => api.post('/admin/forgot-password/verify-otp', { email, otp }),
+  resetPassword: (email, otp, newPassword) => api.post('/admin/forgot-password/reset-password', { email, otp, newPassword }),
 };
 
 export const adminManagementAPI = {
@@ -37,11 +40,13 @@ export const adminAPI = {
   getUsers: () => api.get('/admin/users'),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  toggleUserStatus: (id) => api.patch(`/admin/users/${id}/status`),
   
   // Cards 
   getCards: () => api.get('/admin/cards'),
   deleteCard: (id) => api.delete(`/admin/cards/${id}`),
   updateCard: (id, data) => api.put(`/admin/cards/${id}`, data),
+  getUsersCards: (id) => api.get(`/admin/users/${id}/cards`),
 };
 
 export default api;

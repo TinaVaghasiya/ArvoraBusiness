@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Alert, Modal, Text, StyleSheet } from "react-native";
 import DocumentScanner from "react-native-document-scanner-plugin";
 import * as Progress from "react-native-progress";
-import "../utils/api";
+import {OCR_API} from "../utils/api";
 
 export default function ScanScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -64,6 +64,7 @@ export default function ScanScreen({ navigation }) {
 
       const json = await res.json();
       card = json?.data?.[0] ?? {};
+      // console.log("Backend data:",(JSON.stringify(card)));
       console.log("extract-card success:", card);
     } catch (error) {
       console.warn(
@@ -102,8 +103,8 @@ export default function ScanScreen({ navigation }) {
     const designation =
       card?.designations?.des1 || card?.designations?.designation1 || "";
     const company =
-      card?.company_name?.company1 || card?.company_name?.name1 || "";
-    const email = card?.emails?.email1 ?? "";
+      card?.company_name?.company1 || card?.company_name?.name1 || card?.company_name?.name || "";
+    const email = card?.emails?.email1 || card?.emails?.em1 || "";
     const phone = [
       card?.mobile_numbers?.ph1,
       card?.mobile_numbers?.ph2,
@@ -111,6 +112,7 @@ export default function ScanScreen({ navigation }) {
     ]
       .filter(Boolean)
       .join("\n");
+    const website = card?.websites?.website1 || card?.websites?.web1 || "";
     const address = card?.addresses?.add1 || card?.addresses?.address1 || "";
 
     setLoading(false);
@@ -122,6 +124,7 @@ export default function ScanScreen({ navigation }) {
         company,
         email,
         phone,
+        website,
         address,
         imageUrl,
       });
