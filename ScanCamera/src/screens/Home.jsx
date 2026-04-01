@@ -1,3 +1,4 @@
+import { StatusBar } from 'react-native';
 import {
   View,
   Text,
@@ -15,11 +16,15 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
 const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const [exitModalVisible, setExitModalVisible] = useState(false);
-  const[logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [userName, setUserName] = useState('User');
+  const [lastLogin, setLastLogin] = useState('');
   const navigation = useNavigation();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -27,8 +32,38 @@ export default function HomeScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(-width * 0.75)).current;
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const user = JSON.parse(userData);
+          setUserName(user.name || 'User');
+        }
+        
+        const loginTime = await AsyncStorage.getItem('lastLoginTime');
+        if (loginTime) {
+          const date = new Date(loginTime);
+          const formattedDate = date.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          });
+          const formattedTime = date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+          setLastLogin(`Last Login: ${formattedDate} ${formattedTime}`);
+        }
+      } catch (error) {
+        console.log('Error fetching user data:', error);
+      }
+    };
+    fetchUserData();
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
@@ -89,9 +124,21 @@ export default function HomeScreen() {
     ).start();
   }, []);
 
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: menuVisible ? 0 : -width * 0.75,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [menuVisible]);
+
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        if (menuVisible) {
+          setMenuVisible(false);
+          return true;
+        }
         setExitModalVisible(true);
         return true;
       };
@@ -101,12 +148,12 @@ export default function HomeScreen() {
         onBackPress,
       );
 
-      // Cleanup: remove listener when screen loses focus
       return () => backHandler.remove();
-    }, []),
+    }, [menuVisible]),
   );
 
   const handleLogout = () => {
+    setMenuVisible(false);
     setLogoutModalVisible(true);
   };
 
@@ -130,11 +177,16 @@ export default function HomeScreen() {
 
   const handleConfirmExit = () => {
     setExitModalVisible(false);
-    // BackHandler.exitApp();
     setTimeout(() => {
       BackHandler.exitApp();
     }, 200);
   };
+
+  const navigateFromSidebar = (screenName) => {
+  navigation.navigate(screenName);
+  setTimeout(() => setMenuVisible(false), 300);
+};
+
 
   const scanLinePosition = scanAnim.interpolate({
     inputRange: [0, 1],
@@ -153,15 +205,162 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons
-          name="log-out-outline"
-          size={22}
-          color="#D0312D"
-          style={styles.logoutIcon}
-        />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => {
+            setMenuVisible(true);
+          }}
+          style={styles.menuIconButton}
+        >
+          <Ionicons
+            name="menu-outline"
+            size={32}
+            color="#fff"
+          />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerGreeting}>Hi,{userName.toUpperCase()}</Text>
+        </View>
+        <TouchableOpacity style={styles.headerProfile} onPress={() => {navigation.navigate("MyProfile")}}>
+          <Ionicons name="person-circle" size={37} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Side Menu */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="none"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
+          <Animated.View
+            style={[
+              styles.menuContainer,
+              { transform: [{ translateX: slideAnim }] },
+            ]}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.menuHeader}>
+              <View style={styles.menuProfileSection} >
+                <TouchableOpacity style={styles.menuProfileIcon} onPress={() => {
+                navigateFromSidebar("MyProfile")}}>
+                  <Ionicons name="person" size={26} color="#2563EB" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.menuProfileText} onPress={() => {
+                navigateFromSidebar("MyProfile")}}>
+                <Text style={styles.menuProfileName}>Hi, {userName.toUpperCase()}</Text>
+                <Text style={styles.menuProfileEmail}>{lastLogin || 'Last Login: N/A'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.menuDivider} />
+
+            <View style={styles.menuItems}>
+              <View style={styles.menuItem} >
+                <TouchableOpacity onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate("Home")}} >
+                <View style={styles.menuItemIconBg}>
+                  <Ionicons name="home-outline" size={22} color="#2563EB" />
+                </View></TouchableOpacity>
+                <TouchableOpacity style={{flexDirection:'row', flex:1}} onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate("Home")}} >
+                <Text style={styles.menuItemText}>Home</Text>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.menuItem} >
+                <TouchableOpacity onPress={() => navigateFromSidebar("MyProfile")} >
+                <View style={styles.menuItemIconBg}>
+                  <Ionicons name="person-outline" size={24} color="#2563EB" />
+                </View></TouchableOpacity>
+                <TouchableOpacity style={{flexDirection:'row', flex:1}} onPress={() => navigateFromSidebar("MyProfile")} >
+                <Text style={styles.menuItemText}>My Profile</Text>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+                </TouchableOpacity>
+              </View>
+
+              <View
+                style={styles.menuItem}
+              ><TouchableOpacity onPress={() => navigateFromSidebar("PrivacyPolicy")} >
+                <View style={styles.menuItemIconBg}>
+                  <Ionicons name="shield-checkmark-outline" size={22} color="#2563EB" />
+                </View></TouchableOpacity>
+                <TouchableOpacity style={{flexDirection:'row', flex:1}} onPress={() => navigateFromSidebar("PrivacyPolicy")} >
+                <Text style={styles.menuItemText}>Privacy & Policy</Text>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E1" /></TouchableOpacity>
+              </View>
+
+              <View
+                style={styles.menuItem}
+              >
+                <TouchableOpacity onPress={() => navigateFromSidebar("TermsConditions")}>
+                <View style={styles.menuItemIconBg}>
+                  <Ionicons name="document-text-outline" size={22} color="#2563EB" />
+                </View></TouchableOpacity>
+                <TouchableOpacity style={{flexDirection:'row', flex:1}} onPress={() => navigateFromSidebar("TermsConditions")}>
+                <Text style={styles.menuItemText}>Terms & Conditions</Text>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+                </TouchableOpacity>
+              </View>
+
+              <View
+                style={styles.menuItem}
+              >
+                <TouchableOpacity onPress={() => navigateFromSidebar("ShareApp")}>
+                <View style={styles.menuItemIconBg}>
+                  <Ionicons name="arrow-redo-outline" size={24} color="#2563EB" />
+                </View></TouchableOpacity>
+                <TouchableOpacity style={{flexDirection:'row', flex:1}} onPress={() => navigateFromSidebar("ShareApp")}>
+                <Text style={styles.menuItemText}>Share App</Text>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+                </TouchableOpacity>
+              </View>
+
+              <View
+                style={styles.menuItem}
+              >
+                <TouchableOpacity onPress={() => navigateFromSidebar("HelpSupport")}>
+                <View style={styles.menuItemIconBg}>
+                  <Ionicons name="help-circle-outline" size={24} color="#2563EB" />
+                </View></TouchableOpacity>
+                <TouchableOpacity style={{flexDirection:'row', flex:1}} onPress={() => navigateFromSidebar("HelpSupport")}>
+                <Text style={styles.menuItemText}>Help & Support</Text>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.menuDivider} />
+
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={handleLogout}
+              >
+                <View style={styles.menuItemIconBg}>
+                  <Ionicons name="log-out-outline" size={22} color="#EF4444" />
+                </View>
+                <Text style={[styles.menuItemText, { color: "#EF4444" }]}>
+                  Logout
+                </Text>
+                {/* <Ionicons name="chevron-forward" size={20} color="#CBD5E1" /> */}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.menuFooter}>
+              <Text style={styles.menuFooterText}>© 2026 Arvora Business</Text>
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
+
       <View style={styles.backgroundTop} />
       <View style={styles.backgroundBottom} />
 
@@ -189,7 +388,7 @@ export default function HomeScreen() {
             <View style={styles.scanIconOuter}>
               <View style={styles.scanIconMiddle}>
                 <View style={styles.scanIconInner}>
-                  <Ionicons name="scan" size={65} color="#2563EB" />
+                  <Ionicons name="scan" size={64} color="#2563EB" />
                   <Animated.View
                     style={[
                       styles.scanLine,
@@ -324,34 +523,142 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0F172A",
   },
-  logoutButton: {
+  header: {
     position: "absolute",
-    top: 50,
-    right: 20,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 1000,
+    backgroundColor: "rgba(34, 80, 175, 0.4)",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "rgba(255, 255, 255, 0.2)",
+  },
+  menuIconButton: {
+    position: "absolute",
+    top: 45,
+    left: 20,
+    zIndex: 999,
+    padding: 5,
+  },
+  headerProfile: {
+    position: "absolute",
+    top: 45,
+    right: 8,
     flexDirection: "row",
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: "rgba(230, 230, 230, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 2,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
-    elevation: 10,
+  },
+  headerCenter: {
+    position: "absolute",
+    top: 58,
+    left: 70,
+    right: 0,
+    alignItems: "start",
+    justifyContent: "center",
+  },
+  headerGreeting: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#fff",
+    letterSpacing: 0.5,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  menuContainer: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: width * 1,
+    backgroundColor: "#F1F1F2",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    gap: 8,
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
   },
-  logoutText: {
-    color: "#D0312D",
-    fontSize: 13,
+  menuHeader: {
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    backgroundColor: "#1E3A8A",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  menuProfileSection: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  menuProfileText: {
+    marginLeft: 20,
+    justifyContent: "center",
+  },
+  menuProfileIcon: {
+    width: 40,
+    height: 40,
+    marginLeft: 10,
+    borderRadius: 35,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: "#DBEAFE",
+  },
+  menuProfileName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 2,
+  },
+  menuProfileEmail: {
+    fontSize: 11,
+    color: "#94A3B8",
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: "#E2E8F0",
+  },
+  menuItems: {
+    paddingTop: 8,
+    flex: 1,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    gap: 12,
+  },
+  menuItemIconBg: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuItemText: {
+    fontSize: 16,
     fontWeight: "400",
+    color: "#334155",
+    flex: 1,
   },
-  logoutIcon: {
-    left: 2,
+  menuFooter: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    alignItems: "center",
+  },
+  menuFooterText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 4,
   },
   backgroundTop: {
     position: "absolute",
@@ -392,19 +699,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: "center",
-    paddingTop: 50,
+    paddingTop: 60,
     paddingHorizontal: 24,
   },
   textSection: {
     alignItems: "center",
-    marginTop: 54,
-    marginBottom: 18,
+    marginTop: 80,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "800",
     color: "#fff",
-    marginBottom: 10,
     letterSpacing: -0.5,
     textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 2 },
@@ -412,7 +718,7 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     alignItems: "center",
-    marginVertical: 30,
+    marginVertical: 40,
   },
   scanIconContainer: {
     position: "relative",
@@ -420,8 +726,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scanIconOuter: {
-    width: 180,
-    height: 180,
+    width: 160,
+    height: 160,
     borderRadius: 110,
     backgroundColor: "#DBEAFE",
     alignItems: "center",
@@ -433,16 +739,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
   },
   scanIconMiddle: {
-    width: 140,
-    height: 140,
+    width: 125,
+    height: 125,
     borderRadius: 90,
     backgroundColor: "#93C5FD",
     alignItems: "center",
     justifyContent: "center",
   },
   scanIconInner: {
-    width: 90,
-    height: 90,
+    width: 80,
+    height: 80,
     borderRadius: 70,
     backgroundColor: "#fff",
     alignItems: "center",
@@ -463,8 +769,8 @@ const styles = StyleSheet.create({
   },
   cornerTL: {
     position: "absolute",
-    top: 8,
-    left: 8,
+    top: 6,
+    left: 6,
     width: 40,
     height: 40,
     borderTopWidth: 6,
@@ -474,8 +780,8 @@ const styles = StyleSheet.create({
   },
   cornerTR: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     width: 40,
     height: 40,
     borderTopWidth: 6,
@@ -485,8 +791,8 @@ const styles = StyleSheet.create({
   },
   cornerBL: {
     position: "absolute",
-    bottom: 8,
-    left: 8,
+    bottom: 6,
+    left: 6,
     width: 40,
     height: 40,
     borderBottomWidth: 6,
@@ -496,8 +802,8 @@ const styles = StyleSheet.create({
   },
   cornerBR: {
     position: "absolute",
-    bottom: 8,
-    right: 8,
+    bottom: 6,
+    right: 6,
     width: 40,
     height: 40,
     borderBottomWidth: 6,
@@ -535,7 +841,7 @@ const styles = StyleSheet.create({
     height: 5,
     backgroundColor: "#60A5FA",
     borderRadius: 3,
-    marginTop: 38,
+    marginTop: 20,
     marginBottom: 12,
   },
   subtitle: {

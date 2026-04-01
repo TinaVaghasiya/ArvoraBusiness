@@ -6,6 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Clipboard,
+  ToastAndroid,
+  Platform,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
@@ -33,12 +37,24 @@ export default function CardDetails({ route }) {
   const [menuAddressVisible, setMenuAddressVisible] = useState(false);
   const [menuHeaderVisible, setMenuHeaderVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleteNoteConfirmVisible, setDeleteNoteConfirmVisible] = useState(false);
+  const [deleteAddressConfirmVisible, setDeleteAddressConfirmVisible] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogAddressVisible, setDialogAddressVisible] = useState(false);
   const [tempNote, setTempNote] = useState("");
   const [currentNote, setCurrentNote] = useState(card.note || "");
   const [tempaddress, setTempAddress] = useState("");
   const [currentAddress, setCurrentAddress] = useState(card.address || "");
+
+  const copyToClipboard = (text, label) => {
+    Clipboard.setString(text);
+
+    if (Platform.OS === "android") {
+      ToastAndroid.show(`${label} copied to clipboard`, ToastAndroid.SHORT);
+    } else {
+      Alert.alert("Copied", `${label} copied to clipboard`);
+    }
+  };
 
   const openDialog = () => {
     setTempNote("");
@@ -212,36 +228,25 @@ export default function CardDetails({ route }) {
           </View>
         </View>
 
-        <Menu
-          visible={menuHeaderVisible}
-          onDismiss={() => setMenuHeaderVisible(false)}
-          anchor={
-            <IconButton
-              icon="dots-vertical"
-              size={26}
-              iconColor="#ffffff"
-              onPress={() => setMenuHeaderVisible(true)}
-              style={{ marginRight: 0, marginTop: 14 }}
-            />
-          }
-          contentStyle={{
-            backgroundColor: "#fafdff",
-            marginTop: 35,
-            marginLeft: 14,
-            paddingHorizontal: 0,
-            paddingVertical: 0,
-          }}
-        >
-          <Menu.Item
-            onPress={() => {
-              setMenuHeaderVisible(false);
-              setDeleteConfirmVisible(true);
-            }}
-            title="Delete"
-            titleStyle={{ color: "#f15a5a" }}
+       <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ShareCard", { card })}
+            style={{ marginRight: 8, marginTop: 10 }}
+          >
+            <Ionicons name="share-social-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          <IconButton
+            icon="trash-can-outline"
+            size={26}
+            iconColor="#ffffff"
+            onPress={() => setDeleteConfirmVisible(true)}
+            style={{ marginRight: 0, top: 5 }}
           />
-        </Menu>
+        </View>
       </View>
+      
+      
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -270,6 +275,10 @@ export default function CardDetails({ route }) {
                     <TouchableOpacity
                       activeOpacity={0.7}
                       onPress={() => Linking.openURL(`tel:${num.trim()}`)}
+                      onLongPress={() =>
+                        copyToClipboard(num.trim(), "Phone number")
+                      }
+                      delayLongPress={500}
                     >
                       <Text style={styles.value}>{num.trim()}</Text>
                     </TouchableOpacity>
@@ -299,38 +308,22 @@ export default function CardDetails({ route }) {
           {card.email ? <View style={styles.divider} /> : null}
 
           {card.email ? (
-            <TouchableOpacity style={styles.infoRow} onPress={handleEmail}>
+            <View style={styles.infoRow}>
               <View style={styles.infoBlock}>
                 <Text style={styles.label}>Email</Text>
-                <Text style={styles.value}>{card.email}</Text>
+                <TouchableOpacity
+                  onPress={handleEmail}
+                  onLongPress={() => copyToClipboard(card.email, "Email")}
+                  delayLongPress={500}
+                >
+                  <Text style={styles.value}>{card.email}</Text>
+                </TouchableOpacity>
               </View>
-              <Ionicons
-                name="mail"
-                size={20}
-                color="#2563EB"
-                style={{
-                  marginRight: 0,
-                  backgroundColor: "#e6edf7",
-                  borderRadius: 55,
-                  width: 35,
-                  height: 35,
-                  padding: 7.5,
-                  marginTop: 5,
-                }}
-              />
-            </TouchableOpacity>
-          ) : null}
-          {card.website ? (
-            <View>
-              <View style={styles.divider} />
-              <TouchableOpacity style={styles.infoRow} onPress={handleWebsite}>
-                <View style={styles.infoBlock}>
-                  <Text style={styles.label}>Website</Text>
-                  <Text style={styles.value}>{card.website}</Text>
-                </View>
+
+              <TouchableOpacity onPress={handleEmail}>
                 <Ionicons
-                  name="globe-outline"
-                  size={22}
+                  name="mail"
+                  size={20}
                   color="#2563EB"
                   style={{
                     marginRight: 0,
@@ -338,10 +331,43 @@ export default function CardDetails({ route }) {
                     borderRadius: 55,
                     width: 35,
                     height: 35,
-                    padding: 6.5,
+                    padding: 7.5,
+                    marginTop: 5,
                   }}
                 />
               </TouchableOpacity>
+            </View>
+          ) : null}
+          {card.website ? (
+            <View>
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <View style={styles.infoBlock}>
+                  <Text style={styles.label}>Website</Text>
+                  <TouchableOpacity
+                    onPress={handleWebsite}
+                    onLongPress={() => copyToClipboard(card.website, "Website")}
+                    delayLongPress={500}
+                  >
+                    <Text style={styles.value}>{card.website}</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity onPress={handleWebsite}>
+                  <Ionicons
+                    name="globe-outline"
+                    size={22}
+                    color="#2563EB"
+                    style={{
+                      marginRight: 0,
+                      backgroundColor: "#e6edf7",
+                      borderRadius: 55,
+                      width: 35,
+                      height: 35,
+                      padding: 6.5,
+                    }}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
           ) : null}
         </View>
@@ -378,7 +404,10 @@ export default function CardDetails({ route }) {
                   titleStyle={{ marginTop: 8 }}
                 />
                 <Menu.Item
-                  onPress={handleDeleteAddress}
+                  onPress={() => {
+                    setMenuAddressVisible(false);
+                    setDeleteAddressConfirmVisible(true);
+                  }}
                   title="Delete"
                   titleStyle={{ color: "#f15a5a", marginBottom: 8 }}
                 />
@@ -393,13 +422,28 @@ export default function CardDetails({ route }) {
             )}
           </View>
 
-          <TouchableOpacity onPress={handleOpenLocation}>
+          <View
+            onPress={handleOpenLocation}
+            onLongPress={() => {
+              if (card.company) {
+                copyToClipboard(
+                  `${card.company}${currentAddress ? "\n" + currentAddress : ""}`,
+                  "Company details",
+                );
+              } else if (currentAddress) {
+                copyToClipboard(currentAddress, "Address");
+              }
+            }}
+            delayLongPress={500}
+          >
             <View style={styles.addressRow}>
-              <TouchableOpacity style={styles.addressIcon}>
+              <TouchableOpacity style={styles.addressIcon} onPress={handleOpenLocation}>
                 <Ionicons name="location-outline" size={20} color="#2563EB" />
               </TouchableOpacity>
 
               <View style={{ flex: 1 }}>
+                <TouchableOpacity
+                  onPress={handleOpenLocation}>
                 <Text
                   style={[
                     styles.addressLabel,
@@ -412,9 +456,10 @@ export default function CardDetails({ route }) {
                 <Text style={styles.addressValue}>
                   {currentAddress ? currentAddress : "No address available"}
                 </Text>
+                </TouchableOpacity>
               </View>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Notes Card */}
@@ -449,7 +494,10 @@ export default function CardDetails({ route }) {
                   titleStyle={{ marginTop: 8 }}
                 />
                 <Menu.Item
-                  onPress={handleDeleteNote}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    setDeleteNoteConfirmVisible(true);
+                  }}
                   title="Delete"
                   titleStyle={{ color: "#f15a5a", marginBottom: 8 }}
                 />
@@ -463,11 +511,9 @@ export default function CardDetails({ route }) {
               />
             )}
           </View>
-
           <Text style={styles.notesText}>
             {currentNote ? currentNote : "No notes yet."}
           </Text>
-
           <Portal>
             {/* for address dailog */}
             <Dialog
@@ -541,6 +587,50 @@ export default function CardDetails({ route }) {
                   Cancel
                 </Button>
                 <Button onPress={handleDeleteCard} color="#f15a5a">
+                  Delete
+                </Button>
+              </Dialog.Actions>
+            </Dialog>
+            <Dialog
+              visible={deleteNoteConfirmVisible}
+              onDismiss={() => setDeleteNoteConfirmVisible(false)}
+            >
+              <Dialog.Title>Delete note</Dialog.Title>
+              <Dialog.Content>
+                <Text style={{ color: "#6B7280" }}>
+                  Are you sure you want to delete this note?
+                </Text>
+              </Dialog.Content>
+              <Dialog.Actions>
+                <Button onPress={() => setDeleteNoteConfirmVisible(false)}>
+                  Cancel
+                </Button>
+                <Button onPress={() => {
+                  handleDeleteNote();
+                  setDeleteNoteConfirmVisible(false);
+                }} color="#f15a5a">
+                  Delete
+                </Button>
+              </Dialog.Actions>
+            </Dialog>
+            <Dialog
+              visible={deleteAddressConfirmVisible}
+              onDismiss={() => setDeleteAddressConfirmVisible(false)}
+            >
+              <Dialog.Title>Delete address</Dialog.Title>
+              <Dialog.Content>
+                <Text style={{ color: "#6B7280" }}>
+                  Are you sure you want to delete this address?
+                </Text>
+              </Dialog.Content>
+              <Dialog.Actions>
+                <Button onPress={() => setDeleteAddressConfirmVisible(false)}>
+                  Cancel
+                </Button>
+                <Button onPress={() => {
+                  handleDeleteAddress();
+                  setDeleteAddressConfirmVisible(false);
+                }} color="#f15a5a">
                   Delete
                 </Button>
               </Dialog.Actions>

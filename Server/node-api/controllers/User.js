@@ -67,9 +67,9 @@ export const register = async (req, res) => {
         existingUser.phone = phone;
         existingUser.company = company;
         existingUser.verificationCode = verificationCode;
-        existingUser.otpExpiresAt = Date.now() + 5 * 60 * 1000;
+        existingUser.otpExpiresAt = Date.now() + 45 * 1000;
         await existingUser.save();
-        await SendVerificationEmail(existingUser.email, verificationCode);
+        await SendVerificationEmail(existingUser.email, verificationCode, existingUser.name);
         return res.status(200).json({
           message: "OTP resent to your email",
           user: {
@@ -94,10 +94,10 @@ export const register = async (req, res) => {
       phone,
       company,
       verificationCode,
-      otpExpiresAt: Date.now() + 5 * 60 * 1000,
+      otpExpiresAt: Date.now() + 45 * 1000,
     });
     await newUser.save();
-    await SendVerificationEmail(newUser.email, verificationCode);
+    await SendVerificationEmail(newUser.email, verificationCode, newUser.name);
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -105,6 +105,7 @@ export const register = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         phone: newUser.phone,
+        company: newUser.company,
         createdAt: newUser.createdAt,
       },
     });
@@ -146,9 +147,9 @@ export const login = async (req, res) => {
 
     await User.findByIdAndUpdate(user._id, {
       verificationCode,
-      otpExpiresAt: Date.now() + 5 * 60 * 1000,
+      otpExpiresAt: Date.now() + 45 * 1000,
     });
-    await SendVerificationEmail(user.email, verificationCode);
+    await SendVerificationEmail(user.email, verificationCode, user.name);
 
     res.status(200).json({
       message: "OTP sent successfully",
@@ -157,6 +158,7 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        company: user.company,
         // verificationCode,
       },
     });
@@ -222,6 +224,7 @@ export const verifyOTP = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        company: user.company,
         isVerified: true,
       },
     });

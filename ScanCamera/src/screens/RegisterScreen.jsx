@@ -7,7 +7,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+
   StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -15,6 +15,8 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BASE_API } from "../utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Dialog, Portal, Button } from "react-native-paper";
+import { validateEmail, validatePhone, validateName, validateCompany } from "../utils/validation";
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
@@ -25,13 +27,47 @@ export default function RegisterScreen() {
   const [company, setCompany] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
 
   const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !phone) {
-      setError("Please fill in all the required fields.");
+    setError("");
+
+    // Validate First Name
+    const firstNameValidation = validateName(firstName, "First name");
+    if (!firstNameValidation.isValid) {
+      setError(firstNameValidation.error);
       return;
     }
-    setError("");
+
+    // Validate Last Name
+    const lastNameValidation = validateName(lastName, "Last name");
+    if (!lastNameValidation.isValid) {
+      setError(lastNameValidation.error);
+      return;
+    }
+
+    // Validate Email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      setError(emailValidation.error);
+      return;
+    }
+
+    // Validate Phone
+    const phoneValidation = validatePhone(phone);
+    if (!phoneValidation.isValid) {
+      setError(phoneValidation.error);
+      return;
+    }
+
+    // Validate Company (optional)
+    const companyValidation = validateCompany(company);
+    if (!companyValidation.isValid) {
+      setError(companyValidation.error);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/register`, {
@@ -40,17 +76,18 @@ export default function RegisterScreen() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: `${firstName} ${lastName}`,
-          email,
-          phone,
-          company, 
+          name: `${firstName.trim()} ${lastName.trim()}`,
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
+          company: company.trim(), 
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        Alert.alert("Registration Failed", data.message || "Try again");
+        setDialogMessage(data.message || "Try again");
+        setDialogVisible(true);
         return;
       }
 
@@ -62,16 +99,15 @@ export default function RegisterScreen() {
         await AsyncStorage.setItem("userData", JSON.stringify(data.user));
       }
 
-      // Alert.alert("Success", "Account created successfully!");
-
       navigation.replace("OtpScreen", {
-        identifier: email,
+        identifier: email.trim(),
         user: data.user,
       });
 
     } catch (error) {
       console.error("Error registering:", error);
-      Alert.alert("Error", "An error occurred while registering");
+      setDialogMessage("An error occurred while registering");
+      setDialogVisible(true);
     } finally {
       setLoading(false);
     }
@@ -101,16 +137,18 @@ export default function RegisterScreen() {
               placeholderTextColor="#999"
               style={styles.inputHalf}
               value={firstName}
-              onChangeText={setFirstName}
+              onChangeText={(text) => setFirstName(text.replace(/[^a-zA-Z\s]/g, ''))}
               editable={!loading}
+              maxLength={50}
             />
             <TextInput
               placeholder="Last Name *"
               placeholderTextColor="#999"
               style={styles.inputHalf}
               value={lastName}
-              onChangeText={setLastName}
+              onChangeText={(text) => setLastName(text.replace(/[^a-zA-Z\s]/g, ''))}
               editable={!loading}
+              maxLength={50}
             />
           </View>
 
@@ -122,6 +160,8 @@ export default function RegisterScreen() {
             value={email}
             onChangeText={setEmail}
             editable={!loading}
+            autoCapitalize="none"
+            maxLength={100}
           />
 
           <TextInput
@@ -130,9 +170,9 @@ export default function RegisterScreen() {
             style={styles.input}
             keyboardType="phone-pad"
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(text) => setPhone(text.replace(/[^0-9+\-() ]/g, ''))}
             editable={!loading}
-            maxLength={10}
+            maxLength={15}
           />
           
 
@@ -143,6 +183,7 @@ export default function RegisterScreen() {
             value={company}
             onChangeText={setCompany}
             editable={!loading}
+            maxLength={100}
           />
         </View>
         <Text style={{ color: "red",fontSize: 14, marginLeft: 20, textAlign: "start" }}>* Fields are required</Text>
@@ -181,6 +222,20 @@ export default function RegisterScreen() {
               </TouchableOpacity>
           </View>
         </View>
+        <Portal>
+          <Dialog
+            visible={dialogVisible}
+            onDismiss={() => setDialogVisible(false)}
+          >
+            <Dialog.Title>Registration Failed</Dialog.Title>
+            <Dialog.Content>
+              <Text style={{ color: "#6B7280" }}>{dialogMessage}</Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setDialogVisible(false)}>OK</Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
       </View>
     </KeyboardAvoidingView>
   );

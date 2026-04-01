@@ -28,7 +28,7 @@ export const sendOTP = async (req, res) => {
         console.log('Reset Password OTP:', otp);
 
         admin.resetPasswordOTP = otp;
-        admin.resetPasswordOTPExpiresAt = Date.now() + 5 * 60 * 1000;
+        admin.resetPasswordOTPExpiresAt = Date.now() + 1 * 60 * 1000;
         await admin.save();
 
         await SendPasswordResetEmail(email, otp);

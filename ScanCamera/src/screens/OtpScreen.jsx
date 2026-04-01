@@ -5,20 +5,24 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {BASE_API} from "../utils/api";
+import { BASE_API } from "../utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Dialog, Portal, Button } from "react-native-paper";
 
 export default function OtpScreen({ navigation, route }) {
   const identifier = route?.params?.identifier;
   const inputs = useRef([]);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(45);
   const [reSend, setResend] = useState(false);
   const [error, setError] = useState("");
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [successDialogVisible, setSuccessDialogVisible] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   useEffect(() => {
     if (timer === 0) {
@@ -67,17 +71,21 @@ export default function OtpScreen({ navigation, route }) {
         body: JSON.stringify({ identifier, otp: code }),
       });
       const data = await response.json();
-      
+
       console.log("Login Response:", data);
       if (!response.ok) {
         setLoading(false);
-        Alert.alert("Login Failed", data.message);
+        setDialogMessage(data.message);
+        setDialogVisible(true);
         return;
       }
       await AsyncStorage.setItem("authToken", data.token);
+      await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+      await AsyncStorage.setItem("lastLoginTime", new Date().toISOString());
       navigation.replace("Home");
     } catch (error) {
-      Alert.alert("Error", "Something went wrong");
+      setDialogMessage("Something went wrong");
+      setDialogVisible(true);
     } finally {
       setLoading(false);
     }
@@ -86,6 +94,7 @@ export default function OtpScreen({ navigation, route }) {
   const handleResend = async () => {
     console.log("Resending OTP for identifier:", identifier);
     try {
+      setResendLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -95,14 +104,17 @@ export default function OtpScreen({ navigation, route }) {
       });
       const data = await response.json();
       if (!response.ok) {
-        Alert.alert("Login Failed", data.message);
+        setDialogMessage(data.message);
+        setDialogVisible(true);
         return;
       }
-      Alert.alert("Success", " OTP sent to your email.");
-      setTimer(30);
+      setSuccessDialogVisible(true);
+      setTimer(45);
       setResend(false);
     } catch (error) {
       console.error("Error resending OTP:", error);
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -137,12 +149,23 @@ export default function OtpScreen({ navigation, route }) {
           />
         ))}
       </View>
-      {error ? <Text style={{ color: "red", fontSize: 13, textAlign: "start", marginTop: 10 }}>{error}</Text> : null}
+      {error ? (
+        <Text
+          style={{
+            color: "red",
+            fontSize: 13,
+            textAlign: "start",
+            marginTop: 10,
+          }}
+        >
+          {error}
+        </Text>
+      ) : null}
       <View>
         <TouchableOpacity
           style={styles.resend}
           onPress={handleResend}
-          disabled={!reSend}
+          disabled={!reSend || resendLoading}
         >
           <Text
             style={[
@@ -150,14 +173,54 @@ export default function OtpScreen({ navigation, route }) {
               { color: reSend ? "#407fe4" : "gray" },
             ]}
           >
-            {reSend ? "Resend OTP" : `Resend OTP in ${timer}s`}
+            {resendLoading ? "Resending..." : reSend ? "Resend OTP" : `Resend OTP in ${timer}s`}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={[styles.button, loading && { opacity: 0.7 , backgroundColor: "#94a3b8"}]} onPress={verifyOtp} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Verifying..." : "Verify OTP"}</Text>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          loading && { opacity: 0.7, backgroundColor: "#94a3b8" },
+        ]}
+        onPress={verifyOtp}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Verifying..." : "Verify OTP"}
+        </Text>
       </TouchableOpacity>
+      <Portal>
+        <Dialog
+          visible={dialogVisible}
+          onDismiss={() => setDialogVisible(false)}
+        >
+          <Dialog.Title>Login Failed</Dialog.Title>
+          <Dialog.Content>
+            <Text style={{ color: "#6B7280" }}>{dialogMessage}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => {setDialogVisible(false);
+              setOtp(["", "", "", "", "", ""]);
+            setTimeout(() => {
+              inputs.current[0]?.focus();
+            }, 100);
+          }}>OK</Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
+          visible={successDialogVisible}
+          onDismiss={() => setSuccessDialogVisible(false)}
+        >
+          <Dialog.Title>Success</Dialog.Title>
+          <Dialog.Content>
+            <Text style={{ color: "#6B7280" }}>OTP sent to your email.</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setSuccessDialogVisible(false)}>OK</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

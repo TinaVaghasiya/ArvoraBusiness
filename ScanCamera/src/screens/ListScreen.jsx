@@ -13,11 +13,13 @@ import {
   RefreshControl,
   TextInput,
   TouchableOpacity,
+  Image,
   Keyboard,
   BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Modal } from "react-native";
+import { Dialog, Portal, Button } from "react-native-paper";
 import {BASE_API} from "../utils/api";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,6 +38,9 @@ export default function ListScreen() {
   const [sortVisible, setSortVisible] = useState(false);
   const [selectedSort, setSelectedSort] = useState("recent");
   const [tempSort, setTempSort] = useState("recent");
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const toggleSort = (key) => {
     setTempSort((prev) => (prev === key ? null : key));
@@ -123,7 +128,7 @@ export default function ListScreen() {
         );
       case "recent":
       default:
-        return sorted.reverse();
+        return sorted;
     }
   };
   useEffect(() => {
@@ -137,6 +142,11 @@ export default function ListScreen() {
   }, [isSearching]);
   useEffect(() => {
     const backAction = () => {
+      if (isMultiSelectMode) {
+        setIsMultiSelectMode(false);
+        setSelectedCards([]);
+        return true;
+      }
       if (isSearching) {
         setIsSearching(false);
         setSearch("");
@@ -151,7 +161,7 @@ export default function ListScreen() {
       backAction,
     );
     return () => backHandler.remove();
-  }, [isSearching, allCards]);
+  }, [isSearching, isMultiSelectMode, allCards]);
   useEffect(() => {
     const hideListener = Keyboard.addListener("keyboardDidHide", () => {
       if (isSearching) {
@@ -163,9 +173,6 @@ export default function ListScreen() {
     return () => hideListener.remove();
   }, [isSearching, allCards]);
   useLayoutEffect(() => {
-    {
-      /* header logic */
-    }
     navigation.setOptions({
       headerStyle: {
         height: 95,
@@ -208,54 +215,125 @@ export default function ListScreen() {
         : "Business Cards",
       headerRight: () => (
         <View style={styles.headerRight}>
-          {isSearching ? (
-            <TouchableOpacity
-              style={{ marginRight: 15 }}
-              onPress={() => {
-                Keyboard.dismiss();
-                setIsSearching(false);
-                setSearch("");
-                setCards(allCards);
-              }}
-            >
-              {/* <Ionicons name="close" size={23} color="#686767" /> */}
-            </TouchableOpacity>
+          {isMultiSelectMode ? (
+            <>
+              <TouchableOpacity
+                style={{ marginRight: 15 }}
+                onPress={handleBulkDelete}
+                disabled={selectedCards.length === 0}
+              >
+                <Ionicons name="trash" size={22} color={selectedCards.length > 0 ? "#fff" : "#888"} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsMultiSelectMode(false);
+                  setSelectedCards([]);
+                }}
+              >
+                <Ionicons name="close" size={22} color="#fff" />
+              </TouchableOpacity>
+            </>
           ) : (
-            <TouchableOpacity
-              style={{ marginRight: 20 }}
-              onPress={() => setIsSearching(true)}
-            >
-              <Ionicons name="search" size={22} color="#fff" />
-            </TouchableOpacity>
+            <>
+              {isSearching ? (
+                <TouchableOpacity
+                  style={{ marginRight: 15 }}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setIsSearching(false);
+                    setSearch("");
+                    setCards(allCards);
+                  }}
+                >
+                  {/* <Ionicons name="close" size={23} color="#686767" /> */}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={{ marginRight: 20 }}
+                  onPress={() => setIsSearching(true)}
+                >
+                  <Ionicons name="search" size={22} color="#fff" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                onPress={() => {
+                  setTempSort(selectedSort);
+                  setSortVisible(true);
+                }}
+              >
+                <Ionicons name="swap-vertical" size={22} color="#fff" />
+              </TouchableOpacity>
+            </>
           )}
-          <TouchableOpacity
-            onPress={() => {
-              setTempSort(selectedSort);
-              setSortVisible(true);
-            }}
-          >
-            <Ionicons name="swap-vertical" size={22} color="#fff" />
-          </TouchableOpacity>
         </View>
       ),
     });
-  }, [navigation, isSearching, allCards, search, handleSearch]);
+  }, [navigation, isSearching, allCards, search, handleSearch, isMultiSelectMode, selectedCards]);
   useEffect(() => {
     if (allCards.length > 0) {
       const sortedCards = sortCards(allCards, selectedSort);
       setCards(sortedCards);
     }
   }, [selectedSort]);
+  const handleBulkDelete = () => {
+    setDeleteConfirmVisible(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      await Promise.all(
+        selectedCards.map(id =>
+          fetch(`${BASE_API}/api/cards/delete-card/${id}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        )
+      );
+      setDeleteConfirmVisible(false);
+      setIsMultiSelectMode(false);
+      setSelectedCards([]);
+      fetchCards();
+    } catch (error) {
+      console.log("Error deleting cards:", error);
+    }
+  };
+
   const activeFields = defaultFields;
   const renderItem = ({ item }) => {
     return (
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => navigation.navigate("CardDetails", { card: item })}
+        onPress={() => {
+          if (isMultiSelectMode) {
+            if (selectedCards.includes(item._id)) {
+              setSelectedCards(selectedCards.filter(id => id !== item._id));
+            } else {
+              setSelectedCards([...selectedCards, item._id]);
+            }
+          } else {
+            navigation.navigate("CardDetails", { card: item });
+          }
+        }}
+        onLongPress={() => {
+          setIsMultiSelectMode(true);
+          setSelectedCards([item._id]);
+        }}
+        delayLongPress={500}
       >
         <View style={[styles.card]}>
           <View style={styles.cardRow}>
-            <View style={{ flex: 1 }}>
+            {isMultiSelectMode && (
+              <View style={[styles.checkbox, selectedCards.includes(item._id) && styles.checkboxActive]}>
+                {selectedCards.includes(item._id) && (
+                  <Ionicons name="checkmark" size={14} color="#fff" />
+                )}
+              </View>
+            )}
+            <View style={{ flex: 1, marginLeft: isMultiSelectMode ? 12 : 0 }}>
               {activeFields.includes("name") && (
                 <Text style={styles.name}>
                   {item.name?.trim()
@@ -278,9 +356,11 @@ export default function ListScreen() {
                 <Text style={styles.phone}>{item.email}</Text>
               )}
             </View>
-            <View>
-              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-            </View>
+            {!isMultiSelectMode && (
+              <View>
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+              </View>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -289,22 +369,72 @@ export default function ListScreen() {
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.container}>
+        {isMultiSelectMode && (
+          <View style={styles.selectionBanner}>
+            <Text style={styles.selectionText}>
+              {selectedCards.length} selected
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (selectedCards.length === cards.length) {
+                  setSelectedCards([]);
+                } else {
+                  setSelectedCards(cards.map(card => card._id));
+                }
+              }}
+              style={styles.selectAllButton}
+            >
+              <View style={[styles.checkbox, selectedCards.length === cards.length && styles.checkboxActive]}>
+                {selectedCards.length === cards.length && (
+                  <Ionicons name="checkmark" size={14} color="#fff" />
+                )}
+              </View>
+              <Text style={styles.selectAllText}>Select All</Text>
+            </TouchableOpacity>
+            <View style={styles.divider} />
+          </View>
+        )}
         <FlatList
           data={cards}
           keyExtractor={(item) => item._id}
           renderItem={renderItem}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
-            paddingTop: 12,
+            paddingTop: isMultiSelectMode ? 4 : 12,
             paddingBottom: insets.bottom || 20,
           }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
-            <Text style={styles.empty}>No cards saved yet!!</Text>
+            <View style={{ flex: 1, justifyContent: "center", marginTop: 60 ,alignItems: "center" }}>
+            <Image 
+              style={{ width: 190, height: 190 }}
+              source={require("../../assets/noFound.png")} />
+            <Text style={styles.empty}>No result found !!</Text></View>
           }
         />
+        <Portal>
+          <Dialog
+            visible={deleteConfirmVisible}
+            onDismiss={() => setDeleteConfirmVisible(false)}
+          >
+            <Dialog.Title>Delete cards</Dialog.Title>
+            <Dialog.Content>
+              <Text style={{ color: "#6B7280" }}>
+                Are you sure you want to delete {selectedCards.length} card{selectedCards.length > 1 ? 's' : ''}?
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setDeleteConfirmVisible(false)}>
+                Cancel
+              </Button>
+              <Button onPress={confirmBulkDelete} color="#f15a5a">
+                Delete
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
         {/* -------------------------sort by modal---------------------------- */}
         <Modal visible={sortVisible} transparent animationType="slide">
           <TouchableOpacity
@@ -419,7 +549,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     textAlign: "center",
-    marginTop: 40,
+    marginTop: 10,
     fontSize: 16,
     color: "#777",
   },
@@ -438,8 +568,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     borderRadius: 5,
     borderWidth: 2,
     borderColor: "#2563EB",
@@ -520,5 +650,34 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  selectionBanner: {
+    marginTop: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    backgroundColor: "#F4F6FA",
+  },
+  selectionText: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "400",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e0e7ff",
+    marginTop: 8,
+  },
+  selectAllButton: {
+    position: "absolute",
+    right: 18,
+    top: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  selectAllText: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "400",
   },
 });

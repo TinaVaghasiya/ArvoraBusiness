@@ -5,7 +5,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Home from "./src/screens/Home";
-import Onboard from "./src/screens/Onboardscreen";
+import OpeningScreen from "./src/screens/OpeningScreen";
+import OnboardScreen from "./src/screens/Onboardscreen";
 import ScanScreen from "./src/screens/ScanScreen";
 import ResultScreen from "./src/screens/ResultScreen";
 import ListScreen from "./src/screens/ListScreen";
@@ -13,6 +14,12 @@ import CardDetails from "./src/screens/CardDetails";
 import LoginScreen from "./src/screens/LoginScreen";
 import OtpScreen from "./src/screens/OtpScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
+import ShareCard from "./src/screens/ShareCard";
+import MyProfile from "./src/screens/MyProfile";
+import PrivacyPolicy from "./src/screens/PrivacyPolicy";
+import TermsConditions from "./src/screens/TermsConditions";
+import HelpSupport from "./src/screens/HelpSupport";
+import ShareApp from "./src/screens/ShareApp";
 
 const Stack = createNativeStackNavigator();
 
@@ -41,13 +48,14 @@ export default function App() {
   return (
     <PaperProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Onboard">
+        <Stack.Navigator initialRouteName="OpeningScreen">
           <Stack.Screen
-            name="Onboard"
-            component={Onboard}
+            name="OpeningScreen"
+            component={OpeningScreen}
             options={{ headerShown: false }}
             initialParams={{ destination }}
           />
+          <Stack.Screen name="Onboarding" component={OnboardScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
           <Stack.Screen name="ScanScreen" component={ScanScreen} options={{ headerShown: false }} />
           <Stack.Screen
@@ -60,6 +68,12 @@ export default function App() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OtpScreen" component={OtpScreen} options={{ headerShown: false }} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ShareCard" component={ShareCard} options={{ headerShown: false }} />
+          <Stack.Screen name="MyProfile" component={MyProfile} options={{ headerShown: false }} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} options={{ headerShown: false }} />
+          <Stack.Screen name="TermsConditions" component={TermsConditions} options={{ headerShown: false }} />
+          <Stack.Screen name="HelpSupport" component={HelpSupport} options={{ headerShown: false }} />
+          <Stack.Screen name="ShareApp" component={ShareApp} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>

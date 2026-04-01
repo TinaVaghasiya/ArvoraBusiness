@@ -5,16 +5,12 @@ import Admin from '../models/Admin.js';
 export const adminLogin = async (req, res) => {
     try {
         const { username, email, password } = req.body;
-        
-        // Allow login with either username OR email + password
         if (!password || (!username && !email)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Password and either username or email are required' 
             });
         }
-
-        // Find admin by username or email
         const query = username ? { username } : { email };
         const admin = await Admin.findOne({ ...query, isActive: true });
         
@@ -32,7 +28,6 @@ export const adminLogin = async (req, res) => {
                 message: 'Invalid credentials' 
             });
         }
-
         const token = jwt.sign(
             { 
                 id: admin._id, 
@@ -65,7 +60,7 @@ export const adminLogin = async (req, res) => {
     }
 };
 
-// GET - Get all admins
+// Get all admins
 export const getAdmins = async (req, res) => {
     try {
         const admins = await Admin.find()
@@ -88,7 +83,7 @@ export const getAdmins = async (req, res) => {
     }
 };
 
-// GET - Get single admin by ID
+// Get single admin by ID
 export const getAdminById = async (req, res) => {
     try {
         const admin = await Admin.findById(req.params.id).select('-password');
@@ -99,7 +94,6 @@ export const getAdminById = async (req, res) => {
                 message: 'Admin not found' 
             });
         }
-
         res.status(200).json({
             success: true,
             data: admin
@@ -113,12 +107,10 @@ export const getAdminById = async (req, res) => {
     }
 };
 
-// POST - Create new admin
+// Create new admin
 export const createAdmin = async (req, res) => {
     try {
         const { username, email, password, role } = req.body;
-
-        // Validation based on your schema
         if (!username || !email || !password) {
             return res.status(400).json({ 
                 success: false, 
@@ -190,8 +182,6 @@ export const updateAdmin = async (req, res) => {
                 message: 'Admin not found' 
             });
         }
-
-        // Check if username/email already exists (excluding current admin)
         if (username || email) {
             const existingAdmin = await Admin.findOne({
                 _id: { $ne: adminId },
@@ -208,16 +198,12 @@ export const updateAdmin = async (req, res) => {
                 });
             }
         }
-
-        // Validate password length if provided
         if (password && (password.length < 8)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Password must be 8 characters' 
             });
         }
-
-        // Validate username length if provided
         if (username && username.length < 3) {
             return res.status(400).json({ 
                 success: false, 

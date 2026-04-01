@@ -1,2 +1,2 @@
-export const BASE_API = "http://192.168.1.18:5000";
-export const OCR_API = "http://192.168.1.20:8000";
+export const BASE_API = "https://butyraceous-jacquelynn-nonchaotically.ngrok-free.dev";
+export const OCR_API = `${BASE_API}/api/ocr`;

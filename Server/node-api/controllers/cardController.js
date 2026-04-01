@@ -7,7 +7,7 @@ const uploadPath = path.resolve("uploads");
 export const getCards = async (req, res) => {
   try {
     const userId = req.user.id;
-    const cards = await Card.find({user: userId}).sort({
+    const cards = await Card.find({user: userId, isDeleted: false}).sort({
       createdAt: -1,
     });
 
@@ -70,17 +70,7 @@ export const deleteCard = async (req, res) => {
       });
     }
 
-    if (card.imageUrl) {
-      const filename = card.imageUrl.split("/uploads/")[1];
-
-      const filepath = path.join(uploadPath, filename);
-
-      if (fs.existsSync(filepath)) {
-        fs.unlinkSync(filepath);
-      }
-    }
-
-    await Card.findByIdAndDelete(req.params.id);
+    await Card.findByIdAndUpdate(req.params.id, { isDeleted: true });
 
     res.json({
       success: true,

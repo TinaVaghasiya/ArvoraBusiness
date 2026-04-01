@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import path from "path";
+import axios from "axios";
 import cardRoutes from "./routes/cardRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -23,6 +24,35 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log("MongoDB Error:", err));
+
+// OCR Proxy - Forward requests from port 5000 to port 8000
+app.use('/api/ocr', async (req, res, next) => {
+  try {
+    const ocrUrl = `http://localhost:8000${req.path}`;
+    
+    console.log(`🔄 Proxying OCR request to: ${ocrUrl}`);
+    
+    const response = await axios({
+      method: req.method,
+      url: ocrUrl,
+      data: req.body,
+      headers: {
+        ...req.headers,
+        host: 'localhost:8000'
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity
+    });
+    
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error('❌ OCR Proxy Error:', error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'OCR service unavailable',
+      message: error.message 
+    });
+  }
+});
 
 app.use("/api/cards", cardRoutes);
 app.use("/api/auth", authRoutes);

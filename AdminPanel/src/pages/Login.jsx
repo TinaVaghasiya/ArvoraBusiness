@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import loginimage from "../assets/loginimage.jpeg";
 import { useNavigate } from "react-router-dom";
@@ -11,37 +11,30 @@ export default function LoginPage() {
 
   const navigator = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if (token) {
-      navigator("/dashboard");
-    }
-  }, [navigator]);
   const login = async () => {
-  try {
-    const response = await adminAuthAPI.login(email, password);
-    const token = response.data.token;
-    const username = response.data.admin?.username || "Admin";
-    const role = response.data.admin?.role || "user_manager";
-    
-    localStorage.setItem("adminToken", token);
-    localStorage.setItem("adminUsername", username);
-    localStorage.setItem("adminRole", role);
+    try {
+      const response = await adminAuthAPI.login(email, password);
+      const token = response.data.token;
+      const username = response.data.admin?.username || "Admin";
+      const role = response.data.admin?.role || "user_manager";
+      
+      localStorage.setItem("adminToken", token);
+      localStorage.setItem("adminUsername", username);
+      localStorage.setItem("adminRole", role);
 
-    navigator("/dashboard");
-  } catch (error) {
-    alert("Login failed");
-    console.error(error);
-  }
-};
-
+      navigator("/dashboard");
+    } catch (error) {
+      alert("Login failed");
+      console.error(error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 to-blue-400 relative flex md:items-center md:justify-center items-start overflow-hidden px-4 py-4">
-      <div className="relative z-10 w-full max-w-4xl mt-24 md:mt-0 bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden my-2">
-        <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center bg-white ">
-          <div className="mb-4">
-            <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">Welcome</h2>
+    <div className="min-h-screen bg-gradient-to-br from-blue-200 to-blue-400 relative flex md:items-center md:justify-center items-start px-4 py-4">
+      <div className="relative z-10 w-full max-w-5xl mt-24 md:mt-8 min-h-[350px] md:min-h-[450px] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row my-2 overflow-hidden">
+        <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center bg-white">
+          <div className="mb-6">
+            <h2 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">Welcome</h2>
             <p className="text-gray-600 text-xs md:text-xs">Sign in to access your admin dashboard</p>
           </div>
 

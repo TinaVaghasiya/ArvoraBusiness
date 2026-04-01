@@ -4,13 +4,14 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   View,
   Image,
 } from "react-native";
 import { BASE_API } from "../utils/api";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Dialog, Portal, Button } from "react-native-paper";
+import { validateEmail, validatePhone, validateName, validateWebsite, validateCompany, validateAddress } from "../utils/validation";
 export default function ResultScreen({ route, navigation }) {
   const {
     name: scannedName,
@@ -31,6 +32,9 @@ export default function ResultScreen({ route, navigation }) {
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState(scannedPhone);
   const [website, setWebsite] = useState(scannedWebsite);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [successDialogVisible, setSuccessDialogVisible] = useState(false);
 
   const handleNameChange = (text) => {
     setName(text.replace(/\d/g, ''));
@@ -41,27 +45,76 @@ export default function ResultScreen({ route, navigation }) {
   };
 
   const handleSave = async () => {
-    if (!name || !name.trim()) {
-      Alert.alert("Required", "Please enter the name");
+    // Validate Name (required)
+    const nameValidation = validateName(name, "Name");
+    if (!nameValidation.isValid) {
+      setDialogMessage(nameValidation.error);
+      setDialogVisible(true);
       return;
     }
+
+    // Validate Email (optional but must be valid if provided)
+    if (email && email.trim()) {
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        setDialogMessage(emailValidation.error);
+        setDialogVisible(true);
+        return;
+      }
+    }
+
+    // Validate Phone (optional but must be valid if provided)
+    if (phone && phone.trim()) {
+      const phoneValidation = validatePhone(phone.split('\n')[0]);
+      if (!phoneValidation.isValid) {
+        setDialogMessage(phoneValidation.error);
+        setDialogVisible(true);
+        return;
+      }
+    }
+
+    // Validate Website (optional)
+    const websiteValidation = validateWebsite(website);
+    if (!websiteValidation.isValid) {
+      setDialogMessage(websiteValidation.error);
+      setDialogVisible(true);
+      return;
+    }
+
+    // Validate Company (optional)
+    const companyValidation = validateCompany(company);
+    if (!companyValidation.isValid) {
+      setDialogMessage(companyValidation.error);
+      setDialogVisible(true);
+      return;
+    }
+
+    // Validate Address (optional)
+    const addressValidation = validateAddress(address);
+    if (!addressValidation.isValid) {
+      setDialogMessage(addressValidation.error);
+      setDialogVisible(true);
+      return;
+    }
+
     try {
       const token = await AsyncStorage.getItem("authToken");
       if (!token) {
-        Alert.alert("Error", "Please login again.");
+        setDialogMessage("Please login again.");
+        setDialogVisible(true);
         navigation.replace("LoginScreen");
         return;
       }
       const formData = new FormData();
 
-      formData.append("name", name);
-      formData.append("designation", designation);
-      formData.append("company", company);
-      formData.append("email", email);
-      formData.append("phone", phone);
-      formData.append("website", website);
-      formData.append("address", address);
-      formData.append("note", note);
+      formData.append("name", name.trim());
+      formData.append("designation", designation.trim());
+      formData.append("company", company.trim());
+      formData.append("email", email.trim().toLowerCase());
+      formData.append("phone", phone.trim());
+      formData.append("website", website.trim());
+      formData.append("address", address.trim());
+      formData.append("note", note.trim());
 
       formData.append("image", {
         uri: imageUrl,
@@ -93,15 +146,11 @@ export default function ResultScreen({ route, navigation }) {
         setAddress("");
         setNote("");
 
-        Alert.alert("Saved!", "Card stored successfully", [
-          {
-            text: "OK",
-            onPress: () => navigation.replace("ListScreen"),
-          },
-        ]);
+        setSuccessDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert("Error", error.message);
+      setDialogMessage(error.message);
+      setDialogVisible(true);
     }
   };
 
@@ -127,7 +176,12 @@ export default function ResultScreen({ route, navigation }) {
         <View style={styles.formCard}>
           <Text style={styles.label}>Full Name</Text>
 
-          <TextInput style={styles.input} value={name} onChangeText={handleNameChange} />
+          <TextInput 
+            style={styles.input} 
+            value={name} 
+            onChangeText={handleNameChange}
+            maxLength={50}
+          />
 
           <Text style={styles.label}>Designation</Text>
 
@@ -135,6 +189,7 @@ export default function ResultScreen({ route, navigation }) {
             style={styles.input}
             value={designation}
             onChangeText={setDesignation}
+            maxLength={50}
           />
 
           <Text style={styles.label}>Company</Text>
@@ -143,6 +198,7 @@ export default function ResultScreen({ route, navigation }) {
             style={styles.input}
             value={company}
             onChangeText={setCompany}
+            maxLength={100}
           />
 
           <Text style={styles.label}>Email</Text>
@@ -152,6 +208,8 @@ export default function ResultScreen({ route, navigation }) {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
+            maxLength={100}
           />
 
           <Text style={styles.label}>Phone</Text>
@@ -172,6 +230,7 @@ export default function ResultScreen({ route, navigation }) {
             onChangeText={setWebsite}
             keyboardType="url"
             autoCapitalize="none"
+            maxLength={100}
           />
 
           <Text style={styles.label}>Address</Text>
@@ -182,6 +241,7 @@ export default function ResultScreen({ route, navigation }) {
             onChangeText={setAddress}
             placeholder="Enter Address"
             multiline
+            maxLength={200}
           />
 
           <Text style={styles.label}>Note</Text>
@@ -192,12 +252,45 @@ export default function ResultScreen({ route, navigation }) {
             onChangeText={setNote}
             placeholder="Add note..."
             multiline
+            maxLength={500}
           />
         </View>
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Save Card</Text>
         </TouchableOpacity>
+        <Portal>
+          <Dialog
+            visible={dialogVisible}
+            onDismiss={() => setDialogVisible(false)}
+          >
+            <Dialog.Title>Error</Dialog.Title>
+            <Dialog.Content>
+              <Text style={{ color: "#6B7280" }}>{dialogMessage}</Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setDialogVisible(false)}>OK</Button>
+            </Dialog.Actions>
+          </Dialog>
+          <Dialog
+            visible={successDialogVisible}
+            onDismiss={() => {
+              setSuccessDialogVisible(false);
+              navigation.replace("ListScreen");
+            }}
+          >
+            <Dialog.Title>Saved!</Dialog.Title>
+            <Dialog.Content>
+              <Text style={{ color: "#6B7280" }}>Card stored successfully</Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => {
+                setSuccessDialogVisible(false);
+                navigation.replace("ListScreen");
+              }}>OK</Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
       </KeyboardAwareScrollView>
     </View>
   );

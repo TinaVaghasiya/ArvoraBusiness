@@ -332,13 +332,18 @@ export default function Cards() {
                     <tr
                       key={card._id}
                       onClick={(e) => { if (!e.target.closest("button")) handleView(card); }}
-                      className={`cursor-pointer transition-colors ${isDarkMode ? "hover:bg-gray-700/50" : "hover:bg-gray-50"}`}
+                     className={`cursor-pointer transition-colors ${card.isDeleted ? (isDarkMode ? "bg-red-900/20" : "bg-red-50") : (isDarkMode ? "hover:bg-gray-700/50" : "hover:bg-gray-50")}`}
                     >
                       <td className={`py-2 px-3 md:px-4 text-xs font-medium w-10 md:w-12 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                         {startIndex + index + 1}
                       </td>
                       <td className={`py-2 px-3 md:px-4 text-xs md:text-sm font-medium ${isDarkMode ? "text-gray-200" : "text-gray-900"}`}>
-                        <span className="truncate block max-w-[80px] md:max-w-none">{card.name || "-"}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate block max-w-[80px] md:max-w-none">{card.name || "-"}</span>
+                          {card.isDeleted && (
+                            <span className={`px-2 py-0.5 text-[10px] rounded  whitespace-nowrap ${isDarkMode ? "bg-red-800/30 text-red-300" : "bg-red-100 text-red-600"}`}>Deleted</span>
+                          )}
+                        </div>
                       </td>
                       <td className={`py-2 px-3 md:px-4 text-xs text-left md:text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
                         {card.email || "-"}

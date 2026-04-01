@@ -8,49 +8,73 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Alert,
+
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "@expo/vector-icons/Entypo";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import {BASE_API} from "../utils/api";
+import { Dialog, Portal, Button } from "react-native-paper";
+import { validateEmail, validatePhone } from "../utils/validation";
 
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
   const navigation = useNavigation();
 
   const handleSend = async () => {
+    // Clear previous errors
+    setError("");
     
-      if (!identifier) {
-        setError("Please enter your email or phone number.");
+    if (!identifier || !identifier.trim()) {
+      setError("Please enter your email or phone number");
+      return;
+    }
+
+    // Check if it's email or phone
+    const isEmail = identifier.includes("@");
+    
+    if (isEmail) {
+      const emailValidation = validateEmail(identifier);
+      if (!emailValidation.isValid) {
+        setError(emailValidation.error);
         return;
       }
-      setError("");
-      try {
-        setLoading(true);
+    } else {
+      const phoneValidation = validatePhone(identifier);
+      if (!phoneValidation.isValid) {
+        setError(phoneValidation.error);
+        return;
+      }
+    }
+
+    try {
+      setLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ identifier }),
+        body: JSON.stringify({ identifier: identifier.trim() }),
       });
       const data = await response.json();
       if (!response.ok) {
-        Alert.alert("Login Failed", data.message);
+        setDialogMessage(data.message);
+        setDialogVisible(true);
         return;
       }
-      // Alert.alert("Success", " OTP sent to your email.");
       navigation.replace("OtpScreen", {
-        identifier: identifier,
+        identifier: identifier.trim(),
         user: data.user,
       });
     } catch (error) {
       console.error("Error logging in:", error);
-      Alert.alert("Error", "An error occurred while logging in");
+      setDialogMessage("An error occurred while logging in");
+      setDialogVisible(true);
     } finally {
       setLoading(false);
     }
@@ -91,6 +115,7 @@ export default function LoginScreen() {
               onChangeText={setIdentifier}
               style={styles.input}
               keyboardType="email-address"
+              autoCapitalize="none"
             />
           </View>
           {error ? <Text style={{ color: "red",fontSize: 13, textAlign: "start", marginTop: 10 }}>{error}</Text> : null}
@@ -119,6 +144,20 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        <Portal>
+          <Dialog
+            visible={dialogVisible}
+            onDismiss={() => setDialogVisible(false)}
+          >
+            <Dialog.Title>Login Failed</Dialog.Title>
+            <Dialog.Content>
+              <Text style={{ color: "#6B7280" }}>{dialogMessage}</Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setDialogVisible(false)}>OK</Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
