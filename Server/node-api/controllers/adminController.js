@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin.js'; 
+import { validateEmail, validatePassword, validateUsername } from '../services/validation.js';
 
 // Admin Login
 export const adminLogin = async (req, res) => {
@@ -9,6 +10,13 @@ export const adminLogin = async (req, res) => {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Password and either username or email are required' 
+            });
+        }
+
+        if (email && !validateEmail(email)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid email format' 
             });
         }
         const query = username ? { username } : { email };
@@ -118,14 +126,21 @@ export const createAdmin = async (req, res) => {
             });
         }
 
-        if (username.length < 3) {
+        if (!validateUsername(username)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Username must be at least 3 characters long' 
             });
         }
 
-        if (password.length < 8 || password.length > 15) {
+        if (!validateEmail(email)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid email format' 
+            });
+        }
+
+        if (!validatePassword(password)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Password must be between 8-15 characters' 
@@ -198,13 +213,13 @@ export const updateAdmin = async (req, res) => {
                 });
             }
         }
-        if (password && (password.length < 8)) {
+        if (password && !validatePassword(password)) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Password must be 8 characters' 
+                message: 'Password must be between 8-15 characters' 
             });
         }
-        if (username && username.length < 3) {
+        if (username && !validateUsername(username)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Username must be at least 3 characters long' 

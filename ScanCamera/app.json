@@ -1,15 +1,22 @@
 {
   "expo": {
-    "name": "CameraScanner",
-    "slug": "CameraScanner",
+    "name": "ArvoraScanner",
+    "slug": "ArvoraScanner",
     "version": "1.0.0",
     "orientation": "portrait",
     "newArchEnabled": true,
     "android": {
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "NOTIFICATIONS",
+        "VIBRATE"
       ],
-      "package": "com.anonymous.CameraScanner"
+      "package": "com.arvora.scanner"
+    },
+    "ios": {
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "extra": {
       "eas": {

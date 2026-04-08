@@ -25,6 +25,10 @@ const cardSchema = new mongoose.Schema({
   },
 });
 
+// Indexes for better query performance
+cardSchema.index({ user: 1, isDeleted: 1 });
+cardSchema.index({ createdAt: -1 });
+
 const Card = mongoose.model("Card", cardSchema);
 
 export default Card;

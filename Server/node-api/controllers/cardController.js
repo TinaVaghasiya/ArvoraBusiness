@@ -1,8 +1,9 @@
 import Card from "../models/Card.js";
+import User from "../models/User.js";
 import fs from "fs";
 import path from "path";
 
-const uploadPath = path.resolve("uploads");
+const uploadPath = path.resolve("uploads/business-cards");
 
 export const getCards = async (req, res) => {
   try {
@@ -26,7 +27,7 @@ export const getCards = async (req, res) => {
 export const saveCard = async (req, res) => {
   try {
     const imageUrl = req.file
-      ? `/uploads/${req.file.filename}`
+      ? `/uploads/business-cards/${req.file.filename}`
       : "";
 
     const userId = req.user.id;
@@ -106,7 +107,7 @@ export const updateCard = async (req, res) => {
 
     if (req.file) {
       if (card.imageUrl) {
-        const oldFile = card.imageUrl.split("/uploads/")[1];
+        const oldFile = card.imageUrl.split("/uploads/business-cards/")[1];
 
         const filepath = path.join(uploadPath, oldFile);
 
@@ -115,7 +116,7 @@ export const updateCard = async (req, res) => {
         }
       }
 
-      imageUrl = `/uploads/${req.file.filename}`;
+      imageUrl = `/uploads/business-cards/${req.file.filename}`;
     }
 
     await Card.findByIdAndUpdate(

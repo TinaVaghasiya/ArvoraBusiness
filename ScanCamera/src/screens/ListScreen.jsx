@@ -1,5 +1,4 @@
 import {
-  useLayoutEffect,
   useEffect,
   useState,
   useCallback,
@@ -20,9 +19,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Modal } from "react-native";
 import { Dialog, Portal, Button } from "react-native-paper";
-import {BASE_API} from "../utils/api";
+import {BASE_API, handleApiError} from "../utils/api";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ListScreen() {
@@ -51,6 +51,10 @@ export default function ListScreen() {
       const token = await AsyncStorage.getItem("authToken");
       if (!token) {
         console.log("No auth token found");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'LoginScreen' }],
+        });
         return;
       }
       const response = await fetch(`${BASE_API}/api/cards/get-cards`,{
@@ -60,6 +64,9 @@ export default function ListScreen() {
           Authorization: `Bearer ${token}`,
         },
       });
+      
+      if (await handleApiError(response, navigation)) return;
+      
       const data = await response.json();
       console.log("📥 Cards from backend:", data);
       if (data.success){
@@ -76,6 +83,9 @@ export default function ListScreen() {
   };
   useFocusEffect(
     useCallback(() => {
+      navigation.setOptions({
+        headerShown: false,
+      });
       fetchCards();
     }, []),
   );
@@ -172,103 +182,7 @@ export default function ListScreen() {
     });
     return () => hideListener.remove();
   }, [isSearching, allCards]);
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerStyle: {
-        height: 95,
-        backgroundColor: "#1E3A8A",
-        paddingTop: 45,
-        paddingHorizontal: 16,
-        flexDirection: "row",
-        alignItems: "center",
-      },
-      headerTintColor: "#fff",
-      headerTitle: isSearching
-        ? () => (
-            <View style={styles.searchContainer}>
-              <TextInput
-                placeholder="Search..."
-                placeholderTextColor="#928e8e"
-                ref={searchInputRef}
-                value={search}
-                onChangeText={handleSearch}
-                style={styles.searchInput}
-              />
-              {search.length > 0 && (
-                <TouchableOpacity
-                  style={styles.clearIcon}
-                  onPress={() => {
-                    if (search.length > 0) {
-                      setSearch("");
-                      setCards(allCards);
-                    } else {
-                      Keyboard.dismiss();
-                      setIsSearching(false);
-                    }
-                  }}
-                >
-                  <Ionicons name="close" size={20} color="#6b7280" />
-                </TouchableOpacity>
-              )}
-            </View>
-          )
-        : "Business Cards",
-      headerRight: () => (
-        <View style={styles.headerRight}>
-          {isMultiSelectMode ? (
-            <>
-              <TouchableOpacity
-                style={{ marginRight: 15 }}
-                onPress={handleBulkDelete}
-                disabled={selectedCards.length === 0}
-              >
-                <Ionicons name="trash" size={22} color={selectedCards.length > 0 ? "#fff" : "#888"} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setIsMultiSelectMode(false);
-                  setSelectedCards([]);
-                }}
-              >
-                <Ionicons name="close" size={22} color="#fff" />
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              {isSearching ? (
-                <TouchableOpacity
-                  style={{ marginRight: 15 }}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    setIsSearching(false);
-                    setSearch("");
-                    setCards(allCards);
-                  }}
-                >
-                  {/* <Ionicons name="close" size={23} color="#686767" /> */}
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={{ marginRight: 20 }}
-                  onPress={() => setIsSearching(true)}
-                >
-                  <Ionicons name="search" size={22} color="#fff" />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                onPress={() => {
-                  setTempSort(selectedSort);
-                  setSortVisible(true);
-                }}
-              >
-                <Ionicons name="swap-vertical" size={22} color="#fff" />
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      ),
-    });
-  }, [navigation, isSearching, allCards, search, handleSearch, isMultiSelectMode, selectedCards]);
+
   useEffect(() => {
     if (allCards.length > 0) {
       const sortedCards = sortCards(allCards, selectedSort);
@@ -282,17 +196,19 @@ export default function ListScreen() {
   const confirmBulkDelete = async () => {
     try {
       const token = await AsyncStorage.getItem("authToken");
-      await Promise.all(
-        selectedCards.map(id =>
-          fetch(`${BASE_API}/api/cards/delete-card/${id}`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          })
-        )
-      );
+      const deletePromises = selectedCards.map(async id => {
+        const response = await fetch(`${BASE_API}/api/cards/delete-card/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        await handleApiError(response, navigation);
+        return response;
+      });
+      
+      await Promise.all(deletePromises);
       setDeleteConfirmVisible(false);
       setIsMultiSelectMode(false);
       setSelectedCards([]);
@@ -367,7 +283,97 @@ export default function ListScreen() {
     );
   };
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: "#F4F6FA" }}>
+      <LinearGradient
+        colors={["#1E3A8A", "#1E3A8A"]}
+        style={styles.header}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={() => {
+              if (isSearching) {
+                Keyboard.dismiss();
+                setIsSearching(false);
+                setSearch("");
+                setCards(allCards);
+              } else {
+                navigation.goBack();
+              }
+            }}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          
+          {isSearching ? (
+            <View style={styles.searchContainer}>
+              <TextInput
+                placeholder="Search..."
+                placeholderTextColor="#928e8e"
+                ref={searchInputRef}
+                value={search}
+                onChangeText={handleSearch}
+                style={styles.searchInput}
+              />
+              {search.length > 0 && (
+                <TouchableOpacity
+                  style={styles.clearIcon}
+                  onPress={() => {
+                    setSearch("");
+                    setCards(allCards);
+                  }}
+                >
+                  <Ionicons name="close" size={20} color="#6b7280" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <Text style={styles.headerTitle}>Business Cards</Text>
+          )}
+
+          <View style={styles.headerRight}>
+            {isMultiSelectMode ? (
+              <>
+                <TouchableOpacity
+                  style={{ marginRight: 15 }}
+                  onPress={handleBulkDelete}
+                  disabled={selectedCards.length === 0}
+                >
+                  <Ionicons name="trash" size={22} color={selectedCards.length > 0 ? "#fff" : "#888"} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsMultiSelectMode(false);
+                    setSelectedCards([]);
+                  }}
+                >
+                  <Ionicons name="close" size={22} color="#fff" />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                {!isSearching && (
+                  <TouchableOpacity
+                    style={{ marginRight: 20 }}
+                    onPress={() => setIsSearching(true)}
+                  >
+                    <Ionicons name="search" size={22} color="#fff" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={() => {
+                    setTempSort(selectedSort);
+                    setSortVisible(true);
+                  }}
+                >
+                  <Ionicons name="swap-vertical" size={22} color="#fff" />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </LinearGradient>
+
       <View style={styles.container}>
         {isMultiSelectMode && (
           <View style={styles.selectionBanner}>
@@ -401,7 +407,7 @@ export default function ListScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingTop: isMultiSelectMode ? 4 : 12,
-            paddingBottom: insets.bottom || 20,
+            paddingBottom: 20,
           }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -411,7 +417,7 @@ export default function ListScreen() {
             <Image 
               style={{ width: 190, height: 190 }}
               source={require("../../assets/noFound.png")} />
-            <Text style={styles.empty}>No result found !!</Text></View>
+            <Text style={styles.empty}>No card found !!</Text></View>
           }
         />
         <Portal>
@@ -498,14 +504,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F4F6FA",
   },
+  header: {
+    paddingTop: 50,
+    paddingBottom: 15,
+    paddingHorizontal: 16,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+    marginLeft: 16,
+  },
   searchContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#eff5fd",
     borderRadius: 17,
     paddingHorizontal: 12,
-    width: "100%",
-    flex: 1,
+    marginLeft: 10,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,

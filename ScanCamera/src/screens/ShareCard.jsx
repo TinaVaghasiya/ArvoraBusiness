@@ -57,7 +57,8 @@ export default function ShareCard({ route }) {
             message += `Address: \n${card.address}\n\n`;
         if (selected.note && card.note)
             message += `Notes: ${card.note}\n\n`;
-
+        message += `\n✨ Scan. Save. Share.\n`;
+        message += `\n📲Try Arvora Business : \nhttps://play.google.com/store/apps/details?id=com.arvora.scanner`;
         return message;
     };
     console.log("Selected fields for sharing:", selected);
@@ -74,6 +75,7 @@ export default function ShareCard({ route }) {
             const shareOptions = {};
 
             if (selected.image && card.imageUrl) {
+                
                 const imageUrl = card.imageUrl.startsWith('/') ? card.imageUrl : `/${card.imageUrl}`;
                 const fullImageUrl = `${BASE_API}${imageUrl}`;
 
@@ -111,7 +113,6 @@ export default function ShareCard({ route }) {
                     RNFS.unlink(localPath).catch(() => { });
                 }, 5000);
             }
-
         } catch (err) {
             console.log("Share error:", err);
         }

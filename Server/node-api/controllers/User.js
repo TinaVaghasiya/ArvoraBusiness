@@ -1,56 +1,21 @@
 import jwt from "jsonwebtoken";
 import { SendVerificationEmail } from "../middleware/Email.js";
 import User from "../models/User.js";
-
-// export const register = async (req, res) => {
-//   try {
-//     const { email, name, phone, company } = req.body;
-//     if (!email || !name || !phone) {
-//       return res.status(400).json({ message: "Fields are required" });
-//     }
-//     const existingUser = await User.findOne({
-//       $or: [{ email }, { phone }],
-//      });
-//     if (existingUser) {
-//       return res.status(400).json({ message: "User already exists" });
-//     }
-
-//     const verificationCode = Math.floor(
-//       100000 + Math.random() * 900000,
-//     ).toString();
-//     console.log("Verification Code:",verificationCode);
-
-//     const newUser = new User({
-//       email,
-//       name,
-//       phone,
-//       company,
-//       verificationCode,
-//       otpExpiresAt: Date.now() + 5 * 60 * 1000,
-//     });
-//     await newUser.save();
-//     await SendVerificationEmail(newUser.email, verificationCode);
-//     res.status(201).json({
-//       message: "User registered successfully",
-//       user: {
-//         _id: newUser._id,
-//         name: newUser.name,
-//         email: newUser.email,
-//         phone: newUser.phone,
-//         // verificationCode: newUser.verificationCode,
-//         createdAt: newUser.createdAt,
-//       },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: "Error registering user", error });
-//   }
-// };
+import { validateEmail, validatePhone, sanitizeInput } from "../services/validation.js";
 
 export const register = async (req, res) => {
   try {
     const { email, name, phone, company } = req.body;
     if (!email || !name || !phone) {
       return res.status(400).json({ message: "Fields are required" });
+    }
+
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    if (!validatePhone(phone)) {
+      return res.status(400).json({ message: "Invalid phone number format" });
     }
 
     const existingUser = await User.findOne({
@@ -65,7 +30,7 @@ export const register = async (req, res) => {
         console.log("Verification Code:", verificationCode);
         existingUser.name = name;
         existingUser.phone = phone;
-        existingUser.company = company;
+        existingUser.company = company || existingUser.company;
         existingUser.verificationCode = verificationCode;
         existingUser.otpExpiresAt = Date.now() + 45 * 1000;
         await existingUser.save();
@@ -120,10 +85,17 @@ export const login = async (req, res) => {
     if (!identifier) {
       return res.status(400).json({ message: "Email or phone is required" });
     }
+
     let user;
     if (identifier.includes("@")) {
+      if (!validateEmail(identifier)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
       user = await User.findOne({ email: identifier });
     } else {
+      if (!validatePhone(identifier)) {
+        return res.status(400).json({ message: "Invalid phone number format" });
+      }
       user = await User.findOne({ phone: identifier });
     }
     if (!user) {
@@ -218,6 +190,7 @@ export const verifyOTP = async (req, res) => {
 
     res.status(200).json({
       message: "OTP verified successfully",
+      success: true,
       token,
       user: {
         _id: user._id,
@@ -226,6 +199,7 @@ export const verifyOTP = async (req, res) => {
         phone: user.phone,
         company: user.company,
         isVerified: true,
+        mpinEnabled: user.mpinEnabled || false,
       },
     });
   } catch (error) {

@@ -7,7 +7,7 @@ import {
   View,
   Image,
 } from "react-native";
-import { BASE_API } from "../utils/api";
+import { BASE_API, handleApiError } from "../utils/api";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Dialog, Portal, Button } from "react-native-paper";
@@ -133,6 +133,8 @@ export default function ResultScreen({ route, navigation }) {
           body: formData,
         },
       );
+
+      if (await handleApiError(response, navigation)) return;
 
       const data = await response.json();
 

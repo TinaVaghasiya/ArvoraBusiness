@@ -4,13 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons, FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import Share from "react-native-share";
-import * as Clipboard from '@react-native-clipboard/clipboard';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { Linking } from 'react-native';
 
 export default function ShareApp() {
     const navigation = useNavigation();
 
-    const appLink = "https://drive.google.com/file/d/1jGwTdPaembbyETfZfSnlUjh6pcEG2JGJ/view?usp=sharing";
+    const appLink = "https://play.google.com/store/apps/details?id=com.arvora.scanner";
 
     const generateMessage = () => {
         return `✨ Scan. Save. Share.\n\nArvora Business helps you scan business cards instantly, save contacts, and organize your professional network with ease.\n\n📲 Try it now:\n${appLink}`;
@@ -54,31 +54,10 @@ const handleWhatsAppShare = async () => {
                 ]
             );
         } else {
-            // Some other error, fallback to generic share
             handleShare();
         }
     }
 };
-
-// const handleMessagesShare = async () => {
-//     const message = generateMessage();
-    
-//     try {
-//         const shareOptions = {
-//             title: 'Arvora Business App',
-//             message: message,
-//             social: Share.Social.SMS,
-//         };
-        
-//         await Share.shareSingle(shareOptions);
-        
-//     } catch (error) {
-//         console.log("SMS share error:", error);
-//         // Fallback to generic share
-//         handleShare();
-//     }
-// };
-
 
 const handleMessagesShare = async () => {
     const message = generateMessage();
@@ -119,10 +98,6 @@ const handleCopyLink = () => {
     Clipboard.setString(message);
 };
 
-// const handleCopyLink = async () => {
-//         await Clipboard.setStringAsync(appLink);
-//     };
-
     return (
         <SafeAreaView style={styles.container}>
             {/* Custom Header */}
@@ -144,7 +119,6 @@ const handleCopyLink = () => {
                     />
                 </View>
 
-                {/* Scannable Benefits Section */}
                 <View style={styles.benefitsContainer}>
                     <View style={styles.benefitRow}>
                         <Ionicons name="checkmark-circle" size={22} color="#1E3A8A" />
@@ -164,7 +138,6 @@ const handleCopyLink = () => {
                     Thankyou for choosing Arvora Business!💙
                 </Text>
 
-                {/* Primary Action */}
                 <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
                     <Ionicons name="share-social" size={22} color="#fff" style={{ marginRight: 10 }} />
                     <Text style={styles.shareButtonText}>Share App</Text>
@@ -172,7 +145,6 @@ const handleCopyLink = () => {
 
                 <View style={styles.divider} />
 
-                {/* Quick Actions Grid */}
                 <View style={styles.quickActions}>
                     <TouchableOpacity style={styles.actionItem} onPress={handleCopyLink}>
                         <View style={[styles.iconCircle, { backgroundColor: '#E0E7FF' }]}>

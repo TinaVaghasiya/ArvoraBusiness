@@ -7,16 +7,20 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-
   StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { FontAwesome5 } from "@expo/vector-icons";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BASE_API } from "../utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Dialog, Portal, Button } from "react-native-paper";
-import { validateEmail, validatePhone, validateName, validateCompany } from "../utils/validation";
+import {
+  validateEmail,
+  validatePhone,
+  validateName,
+  validateCompany,
+} from "../utils/validation";
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
@@ -41,11 +45,11 @@ export default function RegisterScreen() {
     }
 
     // Validate Last Name
-    const lastNameValidation = validateName(lastName, "Last name");
-    if (!lastNameValidation.isValid) {
-      setError(lastNameValidation.error);
-      return;
-    }
+    // const lastNameValidation = validateName(lastName, "Last name");
+    // if (!lastNameValidation.isValid) {
+    //   setError(lastNameValidation.error);
+    //   return;
+    // }
 
     // Validate Email
     const emailValidation = validateEmail(email);
@@ -79,7 +83,7 @@ export default function RegisterScreen() {
           name: `${firstName.trim()} ${lastName.trim()}`,
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
-          company: company.trim(), 
+          company: company.trim(),
         }),
       });
 
@@ -102,8 +106,9 @@ export default function RegisterScreen() {
       navigation.replace("OtpScreen", {
         identifier: email.trim(),
         user: data.user,
+        isNewUser: true,
+        source: "register",
       });
-
     } catch (error) {
       console.error("Error registering:", error);
       setDialogMessage("An error occurred while registering");
@@ -119,7 +124,6 @@ export default function RegisterScreen() {
       style={styles.container}
     >
       <View style={styles.container}>
-        
         {/* Header */}
         <View style={styles.titleContainer}>
           <View style={styles.iconCircle}>
@@ -130,14 +134,13 @@ export default function RegisterScreen() {
 
         {/* Form */}
         <View style={styles.form}>
-          
           <View style={styles.row}>
             <TextInput
               placeholder="First Name *"
               placeholderTextColor="#999"
               style={styles.inputHalf}
               value={firstName}
-              onChangeText={(text) => setFirstName(text.replace(/[^a-zA-Z\s]/g, ''))}
+              onChangeText={(text) => setFirstName(text.replace(/\d/g, ""))}
               editable={!loading}
               maxLength={50}
             />
@@ -146,7 +149,7 @@ export default function RegisterScreen() {
               placeholderTextColor="#999"
               style={styles.inputHalf}
               value={lastName}
-              onChangeText={(text) => setLastName(text.replace(/[^a-zA-Z\s]/g, ''))}
+              onChangeText={(text) => setLastName(text.replace(/\d/g, ""))}
               editable={!loading}
               maxLength={50}
             />
@@ -170,11 +173,10 @@ export default function RegisterScreen() {
             style={styles.input}
             keyboardType="phone-pad"
             value={phone}
-            onChangeText={(text) => setPhone(text.replace(/[^0-9+\-() ]/g, ''))}
+            onChangeText={(text) => setPhone(text.replace(/[^0-9+\-() ]/g, ""))}
             editable={!loading}
             maxLength={15}
           />
-          
 
           <TextInput
             placeholder="Company Name (Optional)"
@@ -186,26 +188,57 @@ export default function RegisterScreen() {
             maxLength={100}
           />
         </View>
-        <Text style={{ color: "red",fontSize: 14, marginLeft: 20, textAlign: "start" }}>* Fields are required</Text>
-        
-        {error ?
-        <View style={{flexDirection: "row", alignItems: "center", marginLeft: 20}}>
-          <MaterialIcons name="error-outline" size={20} color="red" />
-        <Text style={{ color: "red",fontSize: 13, marginLeft: 8, textAlign: "start" }}>
-          {error}</Text> 
-        </View>: null}
+
+        {error ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginLeft: 20,
+            }}
+          >
+            <MaterialIcons name="error-outline" size={20} color="red" />
+            <Text
+              style={{
+                color: "red",
+                fontSize: 13,
+                marginLeft: 8,
+                textAlign: "start",
+              }}
+            >
+              {error}
+            </Text>
+          </View>
+        ) : (
+          <Text
+            style={{
+              color: "red",
+              fontSize: 14,
+              marginLeft: 20,
+              textAlign: "start",
+            }}
+          >
+            * Fields are required
+          </Text>
+        )}
 
         {/* Sign Up Button */}
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleRegister}
           disabled={loading}
         >
-          <Text style={[styles.buttonText, loading && { opacity: 0.5 , backgroundColor: "#1E3A8A"}]}>
-            {loading ? "Signing Up..." : "Sign Up"}</Text>
+          <Text
+            style={[
+              styles.buttonText,
+              loading && { opacity: 0.5, backgroundColor: "#1E3A8A" },
+            ]}
+          >
+            {loading ? "Signing Up..." : "Sign Up"}
+          </Text>
         </TouchableOpacity>
 
-         <View style={styles.bottomWrapper}>
+        <View style={styles.bottomWrapper}>
           <View style={styles.curve} />
           <Image
             source={require("../../assets/register4.png")}
@@ -213,13 +246,13 @@ export default function RegisterScreen() {
           />
 
           <View style={styles.bottomSection}>
-            <Text style={styles.bottomText}>
-              Already have an Account?{" "}
-            </Text>
-            <TouchableOpacity style={{ fontWeight: "bold" }} onPress={() => navigation.navigate("LoginScreen")}>
-              <Text style={styles.bottomTextSign}>Sign In
-              </Text>
-              </TouchableOpacity>
+            <Text style={styles.bottomText}>Already have an Account? </Text>
+            <TouchableOpacity
+              style={{ fontWeight: "bold" }}
+              onPress={() => navigation.navigate("LoginScreen")}
+            >
+              <Text style={styles.bottomTextSign}>Sign In</Text>
+            </TouchableOpacity>
           </View>
         </View>
         <Portal>
@@ -241,14 +274,12 @@ export default function RegisterScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: "#f9f7f7",
   },
-   
+
   titleContainer: {
     textAlign: "center",
     width: "100%",
@@ -361,7 +392,7 @@ const styles = StyleSheet.create({
     bottom: 80,
   },
   bottomSection: {
-    flexDirection:"row",
+    flexDirection: "row",
     alignItems: "center",
     position: "absolute",
     bottom: 50,
@@ -375,5 +406,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#3f3f3f",
     fontWeight: "bold",
-  }
+  },
 });

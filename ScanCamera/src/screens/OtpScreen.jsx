@@ -11,7 +11,14 @@ import { BASE_API } from "../utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Dialog, Portal, Button } from "react-native-paper";
 
-export default function OtpScreen({ navigation, route }) {
+export default function OtpScreen({ route, navigation }) {
+  const { source, email, phone } = route.params || {};
+  const getTitle = () => {
+    if (source === 'editScreen' || source === 'edit') {
+      return "Reverify it's you";
+    }
+    return "Verification Code";
+  };  
   const identifier = route?.params?.identifier;
   const inputs = useRef([]);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -54,45 +61,76 @@ export default function OtpScreen({ navigation, route }) {
   };
 
   const verifyOtp = async () => {
-    const code = otp.join("");
+  const code = otp.join("");
+  const source = route?.params?.source;
 
-    if (code.length !== 6) {
-      setError("Please enter 6-digit OTP");
+  if (code.length !== 6) {
+    setError("Please enter 6-digit OTP");
+    return;
+  }
+  setError("");
+  try {
+    setLoading(true);
+    const response = await fetch(`${BASE_API}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ identifier, otp: code }),
+    });
+    const data = await response.json();
+
+    console.log("Login Response:", data);
+    if (!response.ok) {
+      setLoading(false);
+      setDialogMessage(data.message);
+      setDialogVisible(true);
       return;
     }
-    setError("");
-    try {
-      setLoading(true);
-      const response = await fetch(`${BASE_API}/api/auth/verify-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ identifier, otp: code }),
-      });
-      const data = await response.json();
+    await AsyncStorage.setItem("authToken", data.token);
+    await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+    await AsyncStorage.setItem("lastLoginTime", new Date().toISOString());
 
-      console.log("Login Response:", data);
-      if (!response.ok) {
-        setLoading(false);
-        setDialogMessage(data.message);
-        setDialogVisible(true);
-        return;
+     if (source === "editScreen" || source === "edit") {
+      const { nextScreen, field, value } = route.params;
+      
+      if (nextScreen === "EditField") {
+        navigation.replace("EditField", {
+          field: field,
+          value: value,
+        });
+      } else {
+        navigation.goBack(); 
       }
-      await AsyncStorage.setItem("authToken", data.token);
-      await AsyncStorage.setItem("userData", JSON.stringify(data.user));
-      await AsyncStorage.setItem("lastLoginTime", new Date().toISOString());
-      navigation.replace("Home");
-    } catch (error) {
-      setDialogMessage("Something went wrong");
-      setDialogVisible(true);
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    if (source === "register") {
+      navigation.replace("SetupMPinScreen", { isOptional: true });
+    } else if (source === "forgot-pin") {
+      navigation.replace("SetupMPinScreen", { 
+        isOptional: false, 
+        isReset: true 
+      });
+    } else {
+      const mpinEnabled = await AsyncStorage.getItem("mpinEnabled");
+      if (mpinEnabled === "true") {
+        navigation.replace("VerifyMPinScreen", { hideForgotPin: false });
+      } else {
+        navigation.replace("MainTabs");
+      }
+    }
+  } catch (error) {
+    setDialogMessage("Something went wrong");
+    setDialogVisible(true);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleResend = async () => {
-    console.log("Resending OTP for identifier:", identifier);
+    // console.log("Resending OTP for identifier:", identifier);
     try {
       setResendLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/login`, {
@@ -118,17 +156,61 @@ export default function OtpScreen({ navigation, route }) {
     }
   };
 
+  useEffect(() => {
+  const generateOTPForEdit = async () => {
+    // console.log(" Debug - Source:", source, "Identifier:", identifier);
+    
+    if (source === 'editScreen' || source === 'edit') {
+      
+      if (!identifier) {
+        setDialogMessage("Missing email for verification");
+        setDialogVisible(true);
+        return;
+      }
+      
+      try {        
+        const response = await fetch(`${BASE_API}/api/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ identifier }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          console.log("❌ OTP Error:", data.message);
+          setDialogMessage(data.message || "Failed to send OTP");
+          setDialogVisible(true);
+        } else {
+          // console.log("OTP sent successfully");
+        }
+      } catch (error) {
+        console.error("❌ Network Error:", error);
+        setDialogMessage("Failed to send verification code");
+        setDialogVisible(true);
+      }
+    }
+  };
+  if (identifier && (source === 'editScreen' || source === 'edit')) {
+    generateOTPForEdit();
+  }
+}, [identifier, source]);
+
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => {
-          navigation.replace("LoginScreen");
+          navigation.goBack();
         }}
       >
-        <Ionicons name="arrow-back" size={26} color="#2563EB" />
+        <Ionicons name="arrow-back" size={26} color="#1E3A8A" />
       </TouchableOpacity>
-      <Text style={styles.title}>Verification Code</Text>
+      
+      <Text style={styles.title}>{getTitle()}</Text>
 
       <Text style={styles.subtitle}>
         We sent a 6 digit verification code to your email address.
@@ -233,15 +315,17 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    marginTop: 50,
-    marginBottom: 20,
-  },
+        position: "absolute",
+        top: 50,
+        left: 10,
+        padding: 10,
+    },
 
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
-    marginTop: 60,
+    marginTop: 120,
   },
 
   subtitle: {
@@ -259,7 +343,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 53,
     borderWidth: 1,
-    borderColor: "#2563EB",
+    borderColor: "#1E3A8A",
     borderRadius: 10,
     marginHorizontal: 5,
     textAlign: "center",
@@ -272,14 +356,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   resendButtonText: {
-    color: "#407fe4",
+    color: "#1E3A8A",
     fontWeight: "bold",
-    fontSize: 12,
+    fontSize: 13,
   },
 
   button: {
-    marginTop: 30,
-    backgroundColor: "#2563EB",
+    marginTop: 25,
+    backgroundColor: "#1E3A8A",
     paddingVertical: 14,
     paddingHorizontal: 60,
     borderRadius: 12,

@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
 
   skipText: {
-    color: "#2563EB",
+    color: "#1E3A8A",
     fontSize: 15,
     fontWeight: "600",
     // borderBottomWidth: 1,
@@ -179,12 +179,12 @@ const styles = StyleSheet.create({
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#1E3A8A",
     marginHorizontal: 4,
   },
 
   button: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#1E3A8A",
     marginHorizontal: 20,
     padding: 16,
     borderRadius: 14,

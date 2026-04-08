@@ -1,16 +1,22 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { FaUserGroup, FaChevronRight, FaChevronDown } from "react-icons/fa6";
 import { LiaIdCardSolid } from "react-icons/lia";
 import { TbLayoutDashboard } from "react-icons/tb";
 import { CgLogOut } from "react-icons/cg";
-import { IoSettingsOutline } from "react-icons/io5";
+import { IoSettingsOutline, IoNotificationsOutline } from "react-icons/io5";
 import { MdAdminPanelSettings } from "react-icons/md";
 import { useTheme } from "../context/ThemeContext";
+import { adminAuthAPI } from "../services/api";
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { isDarkMode } = useTheme();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    adminAuthAPI.logout();
+  };
 
   return (
     <>
@@ -80,6 +86,17 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <span className="font-medium text-sm md:text-base">Cards</span>
           </NavLink>
 
+          <NavLink
+            to="/notifications"
+            onClick={() => setIsOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200  ${isActive ? (isDarkMode ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl shadow-blue-700/50" : "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl shadow-blue-800/50") : isDarkMode ? "text-gray-300 hover:bg-gray-800" : "text-gray-700 hover:bg-gray-100 hover:shadow-lg"}`
+            }
+          >
+            <IoNotificationsOutline size={20} />
+            <span className="font-medium text-sm md:text-base">Notifications</span>
+          </NavLink>
+
           <div>
             <button
               onClick={() => setSettingsOpen(!settingsOpen)}
@@ -113,14 +130,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           </div>
 
           <div className={`md:absolute md:bottom-0 md:left-0 md:right-0 md:p-4 ml-0 mt-auto border-t backdrop-blur-sm ${isDarkMode ? "border-gray-800/50" : "border-gray-200/50"}`}>
-            <NavLink
-              to="/"
-              onClick={() => {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('adminToken');
-                localStorage.removeItem('adminUsername');
-              }}
-              className={`group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 hover:shadow-xl ${isDarkMode
+            <button
+              onClick={handleLogout}
+              className={`group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 hover:shadow-xl w-full ${isDarkMode
                   ? "text-red-300 hover:bg-red-900/30 hover:shadow-red-500/20"
                   : "text-red-700 hover:bg-orange-50 hover:shadow-red-500/20 hover:shadow-lg"
                 }`}
@@ -129,7 +141,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <CgLogOut size={20} />
               </div>
               <span className="font-medium text-sm md:text-base">Logout</span>
-            </NavLink>
+            </button>
           </div>
         </nav>
       </div>

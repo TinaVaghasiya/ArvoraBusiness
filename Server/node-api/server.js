@@ -6,6 +6,10 @@ import axios from "axios";
 import cardRoutes from "./routes/cardRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import advertisementRoutes from "./routes/advertisementRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import adminNotificationRoutes from "./routes/adminNotificationRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
@@ -15,7 +19,20 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors());              
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:3000', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));              
 app.use(express.json());   
 
 app.use("/uploads", express.static(path.join(__dirname,"uploads")));
@@ -57,6 +74,10 @@ app.use('/api/ocr', async (req, res, next) => {
 app.use("/api/cards", cardRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/advertisements", advertisementRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin/notifications", adminNotificationRoutes);
+app.use("/api/user", userRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Business Card OCR API is running");

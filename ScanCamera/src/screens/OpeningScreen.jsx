@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BASE_API } from "../utils/api";
 
 export default function OpeningScreen() {
   const navigation = useNavigation();
@@ -11,9 +12,31 @@ export default function OpeningScreen() {
       try {
         const token = await AsyncStorage.getItem("authToken");
 
-        setTimeout(() => {
+        setTimeout(async () => {
           if (token) {
-            navigation.replace("Home");
+            try {
+              const response = await fetch(`${BASE_API}/api/auth/mpin/status`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'ngrok-skip-browser-warning': 'true',
+                },
+              });
+              const data = await response.json();
+              
+              if (response.ok && data.success) {
+                if (data.mpinEnabled === true) {
+                  navigation.replace("VerifyMPinScreen");
+                } else {
+                  navigation.replace("MainTabs");
+                }
+              } else {
+                navigation.replace("MainTabs");
+              }
+            } catch (error) {
+              console.log("Error fetching M-PIN status:", error);
+              navigation.replace("MainTabs");
+            }
           } else {
             navigation.replace("Onboarding");
           }
