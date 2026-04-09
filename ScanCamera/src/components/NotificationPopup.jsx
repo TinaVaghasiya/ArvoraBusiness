@@ -61,11 +61,11 @@ const NotificationPopup = ({ visible, notification, onPress, onDismiss }) => {
   ).current;
 
   useEffect(() => {
-    console.log('🎨 NotificationPopup - visible:', visible);
-    console.log('🎨 NotificationPopup - notification:', notification);
+    // console.log('🎨 NotificationPopup - visible:', visible);
+    // console.log('🎨 NotificationPopup - notification:', notification);
     
     if (visible && notification) {
-      console.log('✅ Showing popup animation');
+      console.log('Showing popup animation');
       // Slide down and fade in
       Animated.parallel([
         Animated.spring(slideAnim, {

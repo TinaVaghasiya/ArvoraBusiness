@@ -1,6 +1,5 @@
 import Advertisement from "../models/Advertisement.js";
 
-// Get all active advertisements
 export const getActiveAdvertisements = async (req, res) => {
   try {
     const advertisements = await Advertisement.find({ isActive: true })
@@ -20,7 +19,6 @@ export const getActiveAdvertisements = async (req, res) => {
   }
 };
 
-// Get all advertisements (Admin only)
 export const getAllAdvertisements = async (req, res) => {
   try {
     const advertisements = await Advertisement.find()
@@ -39,7 +37,6 @@ export const getAllAdvertisements = async (req, res) => {
   }
 };
 
-// Create new advertisement (Admin only)
 export const createAdvertisement = async (req, res) => {
   try {
     const { link, order } = req.body;
@@ -82,7 +79,6 @@ export const createAdvertisement = async (req, res) => {
   }
 };
 
-// Update advertisement (Admin only)
 export const updateAdvertisement = async (req, res) => {
   try {
     const { id } = req.params;
@@ -127,7 +123,6 @@ export const updateAdvertisement = async (req, res) => {
   }
 };
 
-// Delete advertisement (Admin only)
 export const deleteAdvertisement = async (req, res) => {
   try {
     const { id } = req.params;
@@ -154,7 +149,6 @@ export const deleteAdvertisement = async (req, res) => {
   }
 };
 
-// Toggle advertisement status (Admin only)
 export const toggleAdvertisementStatus = async (req, res) => {
   try {
     const { id } = req.params;

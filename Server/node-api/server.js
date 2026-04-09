@@ -10,6 +10,8 @@ import advertisementRoutes from "./routes/advertisementRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import adminNotificationRoutes from "./routes/adminNotificationRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import adSettingsRoutes from "./routes/adSettingsRoutes.js";
+import emailChangeRoutes from "./routes/emailChangeRoutes.js";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
@@ -25,10 +27,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true); // Allow all origins for now
     }
   },
   credentials: true
@@ -78,6 +83,8 @@ app.use("/api/advertisements", advertisementRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin/notifications", adminNotificationRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/ad-settings", adSettingsRoutes);
+app.use("/api/email", emailChangeRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Business Card OCR API is running");

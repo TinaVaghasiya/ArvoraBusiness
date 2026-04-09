@@ -12,12 +12,9 @@ export default function Notifications() {
   const [message, setMessage] = useState('');
   const [type, setType] = useState('system');
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [activeTab, setActiveTab] = useState('send');
 
   useEffect(() => {
     fetchUsers();
-    fetchHistory();
   }, []);
 
   const fetchUsers = async () => {
@@ -31,7 +28,6 @@ export default function Notifications() {
       console.log('Response data:', response.data);
       if (response.data.success) {
         console.log('Users data:', response.data.data);
-        // The API returns {users: [...], total: 13}, so we need to access .users
         const usersArray = response.data.data.users || response.data.data;
         setUsers(Array.isArray(usersArray) ? usersArray : []);
         console.log('Set users to:', usersArray);
@@ -43,20 +39,6 @@ export default function Notifications() {
       console.error('Fetch users error:', error);
       console.error('Error response:', error.response);
       setUsers([]);
-    }
-  };
-
-  const fetchHistory = async () => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.get(`${API_BASE_URL}/admin/notifications/sent`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.data.success) {
-        setHistory(response.data.data);
-      }
-    } catch (error) {
-      console.error('Fetch history error:', error);
     }
   };
 
@@ -86,7 +68,6 @@ export default function Notifications() {
         setTitle('');
         setMessage('');
         setSelectedUsers([]);
-        fetchHistory();
       }
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to send notification');
@@ -112,162 +93,148 @@ export default function Notifications() {
     }
   };
 
-  const deleteHistory = async (id) => {
-    if (!confirm('Delete this notification record?')) return;
-    try {
-      const token = localStorage.getItem('adminToken');
-      await axios.delete(`${API_BASE_URL}/admin/notifications/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchHistory();
-    } catch (error) {
-      alert('Failed to delete');
-    }
-  };
-
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Push Notifications</h1>
+    <div className="min-h-screen md:mt-6 mt-3">
+      <div className="mb-3 md:mb-6">
+        <h1 className={`text-xl md:text-2xl lg:text-3xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-gray-900"}`}>
+          Push Notifications
+        </h1>
+        <p className={`text-xs md:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+          Send notifications to users
+        </p>
+      </div>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setActiveTab('send')}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === 'send'
-                ? 'bg-blue-600 text-white'
-                : isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-            }`}
-          >
-            Send Notification
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === 'history'
-                ? 'bg-blue-600 text-white'
-                : isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-            }`}
-          >
-            History
-          </button>
-        </div>
+      <div className="grid grid-cols-1 gap-4 md:gap-6">
+        {/* Send Form */}
+        <div className={`rounded-lg md:rounded-2xl p-4 md:p-6 transition-all duration-300 ${isDarkMode ? "bg-gray-800/60 backdrop-blur-xl border border-gray-700/50" : "bg-white/80 backdrop-blur-xl border border-gray-200/50 shadow-lg"}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base md:text-lg font-bold">Create Notification</h2>
+            <button
+              type="submit"
+              disabled={loading}
+              className="md:hidden bg-gradient-to-r from-blue-500 to-blue-700 text-white px-4 py-1.5 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all shadow-lg text-xs"
+            >
+              {loading ? 'Sending...' : 'Send'}
+            </button>
+          </div>
+          <form onSubmit={handleSendNotification} className="space-y-4">
+            <div>
+              <label className="block mb-2 font-semibold text-xs md:text-sm">Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className={`w-full px-3 md:px-4 py-2 rounded-lg md:rounded-xl border-2 text-sm md:text-base transition-all duration-300 font-medium ${
+                  isDarkMode ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:bg-gray-700' : 'bg-gray-50 border-gray-200 placeholder-gray-500 focus:border-blue-500 focus:bg-white'
+                } focus:outline-none focus:shadow-lg focus:shadow-blue-500/20`}
+                placeholder="Notification title"
+              />
+            </div>
 
-        {activeTab === 'send' ? (
-          <div className="grid grid-cols-1 gap-6">
-            {/* Send Form */}
-            <div className={`p-6 rounded-xl shadow-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-              <h2 className="text-xl font-bold mb-4">Create Notification</h2>
-              <form onSubmit={handleSendNotification} className="space-y-4">
-                <div>
-                  <label className="block mb-2 font-semibold">Title</label>
+            <div>
+              <label className="block mb-2 font-semibold text-xs md:text-sm">Message</label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                className={`w-full px-3 md:px-4 py-2 rounded-lg md:rounded-xl border-2 text-sm md:text-base transition-all duration-300 font-medium ${
+                  isDarkMode ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:bg-gray-700' : 'bg-gray-50 border-gray-200 placeholder-gray-500 focus:border-blue-500 focus:bg-white'
+                } focus:outline-none focus:shadow-lg focus:shadow-blue-500/20`}
+                placeholder="Notification message"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 font-semibold text-xs md:text-sm">Type</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className={`w-full px-3 md:px-4 py-2 rounded-lg md:rounded-xl border-2 text-sm md:text-base transition-all duration-300 font-medium ${
+                  isDarkMode ? 'bg-gray-700/50 border-gray-600 text-white focus:border-blue-500 focus:bg-gray-700' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-blue-500 focus:bg-white'
+                } focus:outline-none focus:shadow-lg focus:shadow-blue-500/20`}
+              >
+                <option value="system" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>System</option>
+                <option value="success" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>Success</option>
+                <option value="warning" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>Warning</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-semibold text-xs md:text-sm">Send To</label>
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
+                <label className={`flex items-center gap-2 cursor-pointer px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl border-2 transition-all duration-300 ${
+                  sendTo === 'all' 
+                    ? 'border-blue-600 bg-blue-600 text-white' 
+                    : isDarkMode ? 'border-gray-600 hover:border-gray-500 bg-gray-700/50' : 'border-gray-300 hover:border-gray-400 bg-white'
+                }`}>
                   <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className={`w-full px-4 py-2 rounded-lg border ${
-                      isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300'
-                    }`}
-                    placeholder="Notification title"
+                    type="radio"
+                    name="sendTo"
+                    value="all"
+                    checked={sendTo === 'all'}
+                    onChange={(e) => {
+                      console.log('Selected: all');
+                      setSendTo(e.target.value);
+                    }}
+                    className="w-4 h-4 md:w-5 md:h-5 text-blue-600 cursor-pointer"
                   />
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-semibold">Message</label>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    rows={4}
-                    className={`w-full px-4 py-2 rounded-lg border ${
-                      isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300'
-                    }`}
-                    placeholder="Notification message"
+                  <span className="font-medium text-xs md:text-sm">All Users</span>
+                </label>
+                <label className={`flex items-center gap-2 cursor-pointer px-3 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl border-2 transition-all duration-300 ${
+                  sendTo === 'selected' 
+                    ? 'border-blue-600 bg-blue-600 text-white' 
+                    : isDarkMode ? 'border-gray-600 hover:border-gray-500 bg-gray-700/50' : 'border-gray-300 hover:border-gray-400 bg-white'
+                }`}>
+                  <input
+                    type="radio"
+                    name="sendTo"
+                    value="selected"
+                    checked={sendTo === 'selected'}
+                    onChange={(e) => {
+                      console.log('Selected: selected');
+                      setSendTo(e.target.value);
+                    }}
+                    className="w-4 h-4 md:w-5 md:h-5 text-blue-600 cursor-pointer"
                   />
-                </div>
+                  <span className="font-medium text-xs md:text-sm">Selected Users</span>
+                </label>
+              </div>
+              <p className="text-xs md:text-sm text-gray-500 mt-2">Current selection: {sendTo}</p>
+            </div>
 
-                <div>
-                  <label className="block mb-2 font-semibold">Type</label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className={`w-full px-4 py-2 rounded-lg border ${
-                      isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'
-                    }`}
-                  >
-                    <option value="system" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>System</option>
-                    <option value="success" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>Success</option>
-                    <option value="warning" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>Warning</option>
-                    <option value="card_scanned" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>Card Scanned</option>
-                    <option value="profile_update" className={isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}>Profile Update</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-semibold">Send To</label>
-                  <div className="flex gap-6">
-                    <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border-2 transition ${
-                      sendTo === 'all' 
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' 
-                        : isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="sendTo"
-                        value="all"
-                        checked={sendTo === 'all'}
-                        onChange={(e) => {
-                          console.log('Selected: all');
-                          setSendTo(e.target.value);
-                        }}
-                        className="w-5 h-5 text-blue-600 cursor-pointer"
-                      />
-                      <span className="font-medium">All Users</span>
-                    </label>
-                    <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border-2 transition ${
-                      sendTo === 'selected' 
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' 
-                        : isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="sendTo"
-                        value="selected"
-                        checked={sendTo === 'selected'}
-                        onChange={(e) => {
-                          console.log('Selected: selected');
-                          setSendTo(e.target.value);
-                        }}
-                        className="w-5 h-5 text-blue-600 cursor-pointer"
-                      />
-                      <span className="font-medium">Selected Users</span>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">Current selection: {sendTo}</p>
-                </div>
-
-                {/* User Selection - Show inline when selected */}
-                {sendTo === 'selected' && (
-                  <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
+            {/* User Selection - Show inline when selected */}
+            {sendTo === 'selected' && (
+              <div className="md:relative">
+                <div className={`md:static fixed inset-0 md:inset-auto z-50 md:z-auto bg-black/50 md:bg-transparent flex items-center justify-center md:block p-4 md:p-0`}>
+                  <div className={`w-full max-w-md md:max-w-none p-4 md:p-3 rounded-xl md:rounded-lg border-2 ${isDarkMode ? 'bg-gray-800 md:bg-gray-700/50 border-gray-700 md:border-gray-600' : 'bg-white md:bg-gray-50 border-gray-300 md:border-gray-200'} shadow-2xl md:shadow-none`}>
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-semibold">Select Users</h3>
-                      <button
-                        type="button"
-                        onClick={handleSelectAll}
-                        className="text-blue-600 text-sm font-semibold hover:underline"
-                      >
-                        {selectedUsers.length === users.length ? 'Deselect All' : 'Select All'}
-                      </button>
+                      <h3 className="font-semibold text-sm md:text-xs">Select Users</h3>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSelectAll}
+                          className="text-blue-600 text-sm md:text-xs font-semibold hover:underline"
+                        >
+                          {selectedUsers.length === users.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSendTo('all')}
+                          className="md:hidden text-gray-500 hover:text-gray-700 p-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="space-y-2 max-h-96 md:max-h-48 overflow-y-auto">
                       {!Array.isArray(users) || users.length === 0 ? (
-                        <p className="text-center text-gray-500 py-4">No users available</p>
+                        <p className="text-center text-gray-500 py-4 text-sm md:text-xs">No users available</p>
                       ) : (
                         users.map(user => (
                           <label
                             key={user._id}
-                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer ${
-                              isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
+                            className={`flex items-center gap-3 md:gap-2 p-3 md:p-2 rounded-lg cursor-pointer transition-colors ${
+                              isDarkMode ? 'hover:bg-gray-700 md:hover:bg-gray-600' : 'hover:bg-gray-100'
                             }`}
                           >
                             <input
@@ -276,76 +243,31 @@ export default function Notifications() {
                               onChange={() => handleUserSelect(user._id)}
                               className="w-4 h-4"
                             />
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">{user.name}</div>
-                              <div className="text-xs text-gray-500">{user.email}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm md:text-xs truncate">{user.name}</div>
+                              <div className="text-xs md:text-[10px] text-gray-500 truncate">{user.email}</div>
                             </div>
                           </label>
                         ))
                       )}
                     </div>
-                    <div className="mt-3 text-sm text-gray-500">
+                    <div className="mt-3 text-sm md:text-xs text-gray-500">
                       {selectedUsers.length} user(s) selected
                     </div>
                   </div>
-                )}
+                </div>
+              </div>
+            )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
-                >
-                  {loading ? 'Sending...' : 'Send Notification'}
-                </button>
-              </form>
-            </div>
-          </div>
-        ) : (
-          /* History */
-          <div className={`p-6 rounded-xl shadow-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <h2 className="text-xl font-bold mb-4">Notification History</h2>
-            <div className="space-y-4">
-              {history.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No notifications sent yet</p>
-              ) : (
-                history.map(item => (
-                  <div
-                    key={item._id}
-                    className={`p-4 rounded-lg border ${
-                      isDarkMode ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-bold text-lg">{item.title}</h3>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            item.type === 'success' ? 'bg-green-100 text-green-800' :
-                            item.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {item.type}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-400 mb-2">{item.message}</p>
-                        <div className="flex gap-4 text-sm text-gray-500">
-                          <span>Sent to: {item.sendTo === 'all' ? 'All Users' : `${item.recipientCount} users`}</span>
-                          <span>{new Date(item.createdAt).toLocaleString()}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => deleteHistory(item._id)}
-                        className="text-red-600 hover:text-red-800 ml-4"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full hidden md:block bg-gradient-to-r from-blue-500 to-blue-700 text-white py-2 md:py-2.5 rounded-lg md:rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all shadow-lg hover:shadow-xl text-sm md:text-base"
+            >
+              {loading ? 'Sending...' : 'Send Notification'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import express from 'express';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
-import authMiddleware from '../middleware/authMiddleware.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -43,6 +43,19 @@ router.put('/read-all', authMiddleware, async (req, res) => {
       { userId: req.user.id, read: false },
       { read: true }
     );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.delete('/', authMiddleware, async (req, res) => {
+  try {
+    const { notificationIds } = req.body;
+    await Notification.deleteMany({ 
+      _id: { $in: notificationIds },
+      userId: req.user.id 
+    });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -33,6 +33,7 @@ export default function HomeScreen() {
   const [recentCards, setRecentCards] = useState([]);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [advertisements, setAdvertisements] = useState([]);
+  const [showStaticSlides, setShowStaticSlides] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const scrollViewRef = useRef(null);
@@ -84,11 +85,11 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    const totalSlides = 3 + advertisements.length;
+    const totalSlides = advertisements.length + (showStaticSlides ? 3 : 0);
     while (dotAnimations.length < totalSlides) {
       dotAnimations.push(new Animated.Value(dotAnimations.length === 0 ? 1 : 0));
     }
-  }, [advertisements]);
+  }, [advertisements, showStaticSlides]);
 
   useEffect(() => {
     dotAnimations.forEach((anim, index) => {
@@ -102,7 +103,7 @@ export default function HomeScreen() {
   }, [currentSlide]);
 
   useEffect(() => {
-    const totalSlides = 3 + advertisements.length;
+    const totalSlides = advertisements.length + (showStaticSlides ? 3 : 0);
     autoScrollTimer.current = setInterval(() => {
       if (scrollViewRef.current && scrollEnabled) {
         const nextSlide = (currentSlide + 1) % totalSlides;
@@ -118,7 +119,7 @@ export default function HomeScreen() {
         clearInterval(autoScrollTimer.current);
       }
     };
-  }, [currentSlide, scrollEnabled, advertisements.length]);
+  }, [currentSlide, scrollEnabled, advertisements.length, showStaticSlides]);
 
   useFocusEffect(
     useCallback(() => {
@@ -144,7 +145,7 @@ export default function HomeScreen() {
 
     // Listen for new notification events for immediate badge update
     const handleNewNotification = () => {
-      console.log('🔔 New notification event received, refreshing badge count');
+      // console.log('New notification event received, refreshing badge count');
       fetchUnreadCount();
     };
     
@@ -192,7 +193,9 @@ export default function HomeScreen() {
   const fetchAdvertisements = async () => {
     try {
       const token = await AsyncStorage.getItem("authToken");
-      const response = await fetch(`${BASE_API}/api/advertisements/active`, {
+      
+      // Fetch ad settings first
+      const settingsResponse = await fetch(`${BASE_API}/api/ad-settings`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -200,14 +203,45 @@ export default function HomeScreen() {
         },
       });
       
-      if (await handleApiError(response, navigation)) return;
+      if (await handleApiError(settingsResponse, navigation)) return;
       
-      const data = await response.json();
-      if (data.success) {
-        setAdvertisements(data.data || []);
+      const settingsData = await settingsResponse.json();
+      const displayType = settingsData.data?.displayType || 'both';
+      
+      // console.log('📢 Global Display Type Setting:', displayType);
+      
+      const adsResponse = await fetch(`${BASE_API}/api/advertisements/active`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (await handleApiError(adsResponse, navigation)) return;
+      
+      const adsData = await adsResponse.json();
+      const dbAds = adsData.data || [];
+      
+      // console.log('📢 Database Ads Count:', dbAds.length);
+      
+      if (displayType === 'static') {
+        // console.log('✅ Setting: STATIC - Showing only static slides');
+        setAdvertisements([]);
+        setShowStaticSlides(true);
+      } else if (displayType === 'dynamic') {
+        // console.log('✅ Setting: DYNAMIC - Showing only database ads');
+        setAdvertisements(dbAds);
+        setShowStaticSlides(false);
+      } else {
+        // console.log('✅ Setting: BOTH - Showing database ads + static slides');
+        setAdvertisements(dbAds);
+        setShowStaticSlides(true);
       }
     } catch (error) {
       console.log("Error fetching advertisements:", error);
+      setAdvertisements([]);
+      setShowStaticSlides(true);
     }
   };
 
@@ -336,7 +370,7 @@ export default function HomeScreen() {
                 }
               }}
               onScrollEndDrag={() => {
-                const totalSlides = 3 + advertisements.length;
+                const totalSlides = advertisements.length + (showStaticSlides ? 3 : 0);
                 autoScrollTimer.current = setInterval(() => {
                   if (scrollViewRef.current && scrollEnabled) {
                     const nextSlide = (currentSlide + 1) % totalSlides;
@@ -370,96 +404,100 @@ export default function HomeScreen() {
                 </View>
               ))}
 
-              <View style={styles.slideCard}>
-                <View
-                  style={[
-                    styles.slideCardInner,
-                    { backgroundColor: "#BFDBFE" },
-                  ]}
-                >
-                  <View style={styles.slideLeft}>
-                    <Text style={styles.slideTitle}>
-                      AI-Powered{"\n"}Scanning
-                    </Text>
-                    <Text style={styles.slideSubtitle}>
-                      Advanced OCR technology instantly extracts contact details
-                      from business cards with 99% accuracy
-                    </Text>
-                  </View>
-                  <View style={styles.slideRight}>
+              {showStaticSlides && (
+                <>
+                  <View style={styles.slideCard}>
                     <View
                       style={[
-                        styles.slideIconCircle,
-                        { backgroundColor: "#93C5FD" },
+                        styles.slideCardInner,
+                        { backgroundColor: "#BFDBFE" },
                       ]}
                     >
-                      <Ionicons name="scan" size={56} color="#1E40AF" />
+                      <View style={styles.slideLeft}>
+                        <Text style={styles.slideTitle}>
+                          AI-Powered{"\n"}Scanning
+                        </Text>
+                        <Text style={styles.slideSubtitle}>
+                          Advanced OCR technology instantly extracts contact details
+                          from business cards with 99% accuracy
+                        </Text>
+                      </View>
+                      <View style={styles.slideRight}>
+                        <View
+                          style={[
+                            styles.slideIconCircle,
+                            { backgroundColor: "#93C5FD" },
+                          ]}
+                        >
+                          <Ionicons name="scan" size={56} color="#1E40AF" />
+                        </View>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </View>
 
-              <View style={styles.slideCard}>
-                <View
-                  style={[
-                    styles.slideCardInner,
-                    { backgroundColor: "#D1FAE5" },
-                  ]}
-                >
-                  <View style={styles.slideLeft}>
-                    <Text style={styles.slideTitle}>
-                      Smart Digital{"\n"}Storage
-                    </Text>
-                    <Text style={styles.slideSubtitle}>
-                      Never lose a contact again. All your business cards
-                      organized and accessible in one place
-                    </Text>
-                  </View>
-                  <View style={styles.slideRight}>
+                  <View style={styles.slideCard}>
                     <View
                       style={[
-                        styles.slideIconCircle,
-                        { backgroundColor: "#86EFAC" },
+                        styles.slideCardInner,
+                        { backgroundColor: "#D1FAE5" },
                       ]}
                     >
-                      <Ionicons name="cloud-done" size={56} color="#047857" />
+                      <View style={styles.slideLeft}>
+                        <Text style={styles.slideTitle}>
+                          Smart Digital{"\n"}Storage
+                        </Text>
+                        <Text style={styles.slideSubtitle}>
+                          Never lose a contact again. All your business cards
+                          organized and accessible in one place
+                        </Text>
+                      </View>
+                      <View style={styles.slideRight}>
+                        <View
+                          style={[
+                            styles.slideIconCircle,
+                            { backgroundColor: "#86EFAC" },
+                          ]}
+                        >
+                          <Ionicons name="cloud-done" size={56} color="#047857" />
+                        </View>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </View>
 
-              <View style={styles.slideCard}>
-                <View
-                  style={[
-                    styles.slideCardInner,
-                    { backgroundColor: "#E9D5FF" },
-                  ]}
-                >
-                  <View style={styles.slideLeft}>
-                    <Text style={styles.slideTitle}>
-                      Quick & Easy{"\n"}Access
-                    </Text>
-                    <Text style={styles.slideSubtitle}>
-                      Search, share, and manage contacts instantly. Save time
-                      and stay organized effortlessly
-                    </Text>
-                  </View>
-                  <View style={styles.slideRight}>
+                  <View style={styles.slideCard}>
                     <View
                       style={[
-                        styles.slideIconCircle,
-                        { backgroundColor: "#C4B5FD" },
+                        styles.slideCardInner,
+                        { backgroundColor: "#E9D5FF" },
                       ]}
                     >
-                      <Ionicons name="flash" size={56} color="#6D28D9" />
+                      <View style={styles.slideLeft}>
+                        <Text style={styles.slideTitle}>
+                          Quick & Easy{"\n"}Access
+                        </Text>
+                        <Text style={styles.slideSubtitle}>
+                          Search, share, and manage contacts instantly. Save time
+                          and stay organized effortlessly
+                        </Text>
+                      </View>
+                      <View style={styles.slideRight}>
+                        <View
+                          style={[
+                            styles.slideIconCircle,
+                            { backgroundColor: "#C4B5FD" },
+                          ]}
+                        >
+                          <Ionicons name="flash" size={56} color="#6D28D9" />
+                        </View>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </View>
+                </>
+              )}
             </ScrollView>
 
             <View style={styles.pagination}>
-              {[...Array(3 + advertisements.length)].map((_, i) => (
+              {[...Array(advertisements.length + (showStaticSlides ? 3 : 0))].map((_, i) => (
                 <Animated.View
                   key={i}
                   style={[
@@ -556,13 +594,13 @@ export default function HomeScreen() {
                 <Text style={styles.emptyText}>
                   Start scanning business cards to build your digital collection
                 </Text>
-                {/* <TouchableOpacity
+                <TouchableOpacity
                   style={styles.emptyScanButton}
                   onPress={() => navigation.navigate('ScanScreen')}
                 >
                   <Ionicons name="scan" size={20} color="#fff" />
-                  {/* <Text style={styles.emptyScanButtonText}>Scan First Card</Text> */}
-                {/* </TouchableOpacity> */}
+                  <Text style={styles.emptyScanButtonText}>Scan First Card</Text>
+                </TouchableOpacity> 
               </View>
             )}
           </View>
@@ -1023,5 +1061,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
+  },
+  emptyScanButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2563EB",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 6,
+  },
+  emptyScanButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

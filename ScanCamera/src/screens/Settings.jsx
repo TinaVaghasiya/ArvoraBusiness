@@ -8,20 +8,28 @@ import {
   Switch,
   ActivityIndicator,
   Modal,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { BASE_API } from '../utils/api';
+import messaging from '@react-native-firebase/messaging';
+import { registerForPushNotifications } from '../utils/fcm';
 
 export default function Settings({ navigation }) {
   const [mpinEnabled, setMpinEnabled] = useState(false);
   const [mpinActuallySet, setMpinActuallySet] = useState(false);
   const [loadingMpin, setLoadingMpin] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [notificationModalConfig, setNotificationModalConfig] = useState({});
 
   useEffect(() => {
     fetchMPinStatus();
+    checkNotificationPermission();
   }, []);
 
   const fetchMPinStatus = async () => {
@@ -41,6 +49,67 @@ export default function Settings({ navigation }) {
       }
     } catch (error) {
       console.log('Error fetching M-PIN status:', error);
+    }
+  };
+
+  const checkNotificationPermission = async () => {
+    try {
+      const authStatus = await messaging().hasPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      setNotificationsEnabled(enabled);
+    } catch (error) {
+      console.log('Error checking notification permission:', error);
+    }
+  };
+
+  const handleNotificationToggle = async (value) => {
+    if (value) {
+      setLoadingNotifications(true);
+      try {
+        const authStatus = await messaging().requestPermission();
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+        if (enabled) {
+          await registerForPushNotifications();
+          setNotificationsEnabled(true);
+        } else {
+          setNotificationsEnabled(false);
+          setNotificationModalConfig({
+            icon: 'close-circle-outline',
+            iconColor: '#EF4444',
+            iconBg: '#FEE2E2',
+            title: 'Permission Denied',
+            message: 'Please enable notifications from your device settings.',
+            buttons: [
+              { text: 'Cancel', onPress: () => setNotificationModalVisible(false), style: 'cancel' },
+              { text: 'Open Settings', onPress: () => { setNotificationModalVisible(false); Linking.openSettings(); } },
+            ],
+          });
+          setNotificationModalVisible(true);
+        }
+      } catch (error) {
+        console.log('Error enabling notifications:', error);
+        setNotificationsEnabled(false);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    } else {
+      setNotificationModalConfig({
+        icon: 'notifications-off-outline',
+        iconColor: '#F59E0B',
+        iconBg: '#FEF3C7',
+        title: 'Disable Notifications',
+        message: 'To disable notifications, please go to your device settings.',
+        buttons: [
+          { text: 'Cancel', onPress: () => setNotificationModalVisible(false), style: 'cancel' },
+          { text: 'Open Settings', onPress: () => { setNotificationModalVisible(false); Linking.openSettings(); } },
+        ],
+      });
+      setNotificationModalVisible(true);
     }
   };
 
@@ -107,6 +176,32 @@ export default function Settings({ navigation }) {
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notifications</Text>
+          
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={styles.iconBg}>
+                <Ionicons name="notifications-outline" size={22} color="#2563EB" />
+              </View>
+              <View>
+                <Text style={styles.settingText}>Allow Notifications</Text>
+                <Text style={styles.settingSubtext}>Receive updates and alerts</Text>
+              </View>
+            </View>
+            {loadingNotifications ? (
+              <ActivityIndicator size="small" color="#2563EB" />
+            ) : (
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleNotificationToggle}
+                trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
+                thumbColor={notificationsEnabled ? '#2563EB' : '#F3F4F6'}
+              />
+            )}
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Security</Text>
           
@@ -254,6 +349,37 @@ export default function Settings({ navigation }) {
           </View>
         </BlurView>
       </Modal>
+
+      <Modal
+        visible={notificationModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNotificationModalVisible(false)}
+      >
+        <BlurView intensity={80} style={styles.modalOverlay}>
+          <View style={styles.alertBox}>
+            <View style={[styles.alertIconContainer, { backgroundColor: notificationModalConfig.iconBg }]}>
+              <Ionicons name={notificationModalConfig.icon} size={34} color={notificationModalConfig.iconColor} />
+            </View>
+            <Text style={styles.alertTitle}>{notificationModalConfig.title}</Text>
+            <Text style={styles.alertMessage}>{notificationModalConfig.message}</Text>
+            <View style={styles.alertButtons}>
+              {notificationModalConfig.buttons?.map((button, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={button.style === 'cancel' ? styles.cancelButton : styles.actionButton}
+                  onPress={button.onPress}
+                  activeOpacity={0.8}
+                >
+                  <Text style={button.style === 'cancel' ? styles.cancelButtonText : styles.actionButtonText}>
+                    {button.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </BlurView>
+      </Modal>
     </View>
   );
 }
@@ -326,6 +452,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '400',
     color: '#334155',
+  },
+  settingSubtext: {
+    fontSize: 12,
+    color: '#94A3AF',
+    marginTop: 2,
   },
   logoutItem: {
     borderBottomWidth: 0,
@@ -409,6 +540,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   logoutButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  actionButton: {
+    flex: 1,
+    height: 45,
+    backgroundColor: '#2563EB',
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  actionButtonText: {
     color: '#fff',
     fontWeight: '700',
     fontSize: 16,

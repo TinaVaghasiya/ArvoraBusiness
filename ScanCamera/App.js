@@ -256,7 +256,7 @@ export default function App() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="EditField"
+              name="EditScreen"
               component={EditScreen}
               options={{ headerShown: false }}
             />

@@ -7,7 +7,7 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
-import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import {Ionicons, MaterialIcons, FontAwesome6 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -50,56 +50,13 @@ export default function MyProfile({ navigation, route }) {
     }, [])
   );
 
-  const InfoRow = ({ icon, label, value, field }) => {
-    const handleEdit = async () => {
-      try {
-        // Get user data for identifier
-        const stored = await AsyncStorage.getItem("userData");
-        const user = JSON.parse(stored);
+  const handleEditProfile = () => {
+    navigation.navigate('EditScreen', {
+      userData: userData,
+    });
+  };
 
-        if (field === 'email') {
-          navigation.navigate('OtpScreen', {
-            identifier: user.email,
-            source: 'editScreen',
-            nextScreen: 'EditField',
-            field: field,
-            value: value,
-          });
-          return;
-        }
-        navigation.navigate('EditField', {
-          field: field,
-          value: value,
-          onSuccess: (message, type) => {
-            setToastMessage(message);
-            setToastType(type);
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 150,
-              useNativeDriver: true,
-            }).start();
-
-            setTimeout(() => {
-              Animated.timing(fadeAnim, {
-                toValue: 0,
-                duration: 150,
-                useNativeDriver: true,
-              }).start(() => {
-                setToastMessage("");
-              });
-            }, 1300);
-          },
-        });
-      } catch (error) {
-        console.log("Error getting user data:", error);
-        navigation.navigate('EditField', {
-          field: field,
-          value: value,
-        });
-      }
-    };
-
-
+  const InfoRow = ({ icon, label, value }) => {
     return (
       <View style={styles.infoItem}>
         <View style={styles.infoIconBg}>
@@ -110,10 +67,6 @@ export default function MyProfile({ navigation, route }) {
           <Text style={styles.infoLabel}>{label}</Text>
           <Text style={styles.infoValue}>{value}</Text>
         </View>
-
-        <TouchableOpacity onPress={handleEdit}>
-          <AntDesign name="edit" size={18} color="#2563EB" style={styles.editIcon} />
-        </TouchableOpacity>
       </View>
     );
   };
@@ -134,15 +87,24 @@ export default function MyProfile({ navigation, route }) {
 
         {/* Title */}
         <Text style={styles.headerTitle}>My Profile</Text>
-
       </View>
 
       {/* PROFILE ICON */}
       <View style={styles.profileWrapper}>
         <View style={styles.profileCircle}>
           <Ionicons name="person" size={45} color="#2563EB" />
-        </View>
+        </View> 
+      </View>
+
+      <View style={{ alignItems: 'center', marginBottom: 20, flexDirection: 'row', justifyContent: 'center', marginBottom: 50 }}>
         <Text style={styles.profileName}>{userData.name}</Text>
+        <TouchableOpacity
+          style={styles.headerEditButton}
+          onPress={handleEditProfile}
+        >
+          <FontAwesome6 name="pencil" size={17} color="#808080" />
+        </TouchableOpacity>
+
       </View>
 
       <ScrollView
@@ -156,7 +118,6 @@ export default function MyProfile({ navigation, route }) {
             icon="person-outline"
             label="Full Name"
             value={userData.name}
-            field="name"
           />
 
           <View style={styles.divider} />
@@ -165,7 +126,6 @@ export default function MyProfile({ navigation, route }) {
             icon="mail-outline"
             label="Email"
             value={userData.email}
-            field="email"
           />
 
           <View style={styles.divider} />
@@ -174,7 +134,6 @@ export default function MyProfile({ navigation, route }) {
             icon="call-outline"
             label="Phone"
             value={userData.phone}
-            field="phone"
           />
 
           <View style={styles.divider} />
@@ -183,7 +142,6 @@ export default function MyProfile({ navigation, route }) {
             icon="business-outline"
             label="Company"
             value={userData.company}
-            field="company"
           />
 
         </View>
@@ -217,20 +175,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#2E4A9E',
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
   },
 
   backButton: {
     position: 'absolute',
-    top: 50,
-    left: 15,
+    top: 55,
+    left: 20,
   },
 
   headerTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '600',
     color: '#fff',
     marginTop: -45,
-    // right: 55,
+    marginRight: 130,
+  },
+
+  headerEditButton: {
+    top: 6,
+    left: 6,
+    
   },
 
   profileWrapper: {
@@ -254,7 +219,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '600',
     color: '#1E293B',
-    marginBottom: 40,
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -294,10 +258,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#1E293B',
-  },
-  editIcon: {
-    marginLeft: 10,
-    marginTop: 20,
   },
   divider: {
     height: 1,
