@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { BASE_API } from '../utils/api';
-import messaging from '@react-native-firebase/messaging';
+import messaging from '../utils/firebaseMessaging';
 import { registerForPushNotifications } from '../utils/fcm';
 
 export default function Settings({ navigation }) {

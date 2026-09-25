@@ -1,4 +1,4 @@
-export const BASE_API = "https://butyraceous-jacquelynn-nonchaotically.ngrok-free.dev";
+export const BASE_API = "http://172.20.26.128:5000";
 export const OCR_API = `${BASE_API}/api/ocr`;
 
 // Helper function to check token expiration and handle logout

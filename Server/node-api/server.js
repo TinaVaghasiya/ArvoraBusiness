@@ -27,18 +27,30 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all origins for now
+      callback(null, true);
     }
   },
   credentials: true
-}));              
-app.use(express.json());   
+}));
+app.use(express.json());
+
+// ✅ Request Logger
+app.use((req, res, next) => {
+  console.log(`\n📥 [${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+  if (Object.keys(req.body || {}).length > 0) {
+    console.log("   Body:", JSON.stringify(req.body));
+  }
+  const originalJson = res.json.bind(res);
+  res.json = (data) => {
+    console.log(`📤 Response [${res.statusCode}]:`, JSON.stringify(data));
+    return originalJson(data);
+  };
+  next();
+});
 
 app.use("/uploads", express.static(path.join(__dirname,"uploads")));
 

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_API } from './api';
-import messaging from '@react-native-firebase/messaging';
+import messaging from './firebaseMessaging';
 import { Platform, Vibration } from 'react-native';
 import * as Notifications from 'expo-notifications';
 

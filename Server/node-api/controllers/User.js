@@ -27,14 +27,20 @@ export const register = async (req, res) => {
         const verificationCode = Math.floor(
           100000 + Math.random() * 900000,
         ).toString();
-        console.log("Verification Code:", verificationCode);
+        console.log("🔑 Generated OTP (Resent):", verificationCode);
         existingUser.name = name;
         existingUser.phone = phone;
         existingUser.company = company || existingUser.company;
         existingUser.verificationCode = verificationCode;
-        existingUser.otpExpiresAt = Date.now() + 45 * 1000;
+        existingUser.otpExpiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
         await existingUser.save();
-        await SendVerificationEmail(existingUser.email, verificationCode, existingUser.name);
+        
+        try {
+          await SendVerificationEmail(existingUser.email, verificationCode, existingUser.name);
+        } catch (emailErr) {
+          console.error("❌ Email send error:", emailErr.message);
+        }
+
         return res.status(200).json({
           message: "OTP resent to your email",
           user: {
@@ -51,7 +57,7 @@ export const register = async (req, res) => {
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000,
     ).toString();
-    console.log("Verification Code:", verificationCode);
+    console.log("🔑 Generated OTP (Register):", verificationCode);
 
     const newUser = new User({
       email,
@@ -59,10 +65,16 @@ export const register = async (req, res) => {
       phone,
       company,
       verificationCode,
-      otpExpiresAt: Date.now() + 45 * 1000,
+      otpExpiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
     });
     await newUser.save();
-    await SendVerificationEmail(newUser.email, verificationCode, newUser.name);
+
+    try {
+      await SendVerificationEmail(newUser.email, verificationCode, newUser.name);
+    } catch (emailErr) {
+      console.error("❌ Email send error:", emailErr.message);
+    }
+
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -75,54 +87,66 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Error registering user", error });
+    console.error("❌ Register Controller Error:", error);
+    res.status(500).json({ message: "Error registering user", error: error.message || error });
   }
 };
 
 export const login = async (req, res) => {
+  console.log("\n🔐 ===== LOGIN REQUEST =====");
+  console.log("   Identifier:", req.body?.identifier);
   try {
     const { identifier } = req.body;
     if (!identifier) {
+      console.log("❌ No identifier provided");
       return res.status(400).json({ message: "Email or phone is required" });
     }
 
     let user;
     if (identifier.includes("@")) {
+      console.log("   Type: Email");
       if (!validateEmail(identifier)) {
+        console.log("❌ Invalid email format");
         return res.status(400).json({ message: "Invalid email format" });
       }
       user = await User.findOne({ email: identifier });
     } else {
+      console.log("   Type: Phone");
       if (!validatePhone(identifier)) {
+        console.log("❌ Invalid phone format");
         return res.status(400).json({ message: "Invalid phone number format" });
       }
       user = await User.findOne({ phone: identifier });
     }
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found. Please register" });
-    }
 
-    if (!user.isVerified) {
-      return res.status(400).json({ message: "Please verify your account" });
+    if (!user) {
+      console.log("❌ User not found:", identifier);
+      return res.status(404).json({ message: "User not found. Please register" });
     }
+    console.log("✅ User found:", user.name, "|", user.email);
 
     if (!user.isActive) {
-      return res.status(403).json({message: "Your account has been deactivated. Please contact support"});
+      console.log("❌ Account deactivated:", user.email);
+      return res.status(403).json({ message: "Your account has been deactivated. Please contact support" });
     }
 
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
-    console.log("Verification Code:", verificationCode);
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("🔑 OTP Generated:", verificationCode);
 
     await User.findByIdAndUpdate(user._id, {
       verificationCode,
-      otpExpiresAt: Date.now() + 45 * 1000,
+      otpExpiresAt: Date.now() + 10 * 60 * 1000,
     });
-    await SendVerificationEmail(user.email, verificationCode, user.name);
+    console.log("✅ OTP saved to DB");
 
+    try {
+      await SendVerificationEmail(user.email, verificationCode, user.name);
+      console.log("✅ OTP email sent to:", user.email);
+    } catch (emailErr) {
+      console.error("❌ Email send error:", emailErr.message);
+    }
+
+    console.log("✅ Login success — OTP sent");
     res.status(200).json({
       message: "OTP sent successfully",
       user: {
@@ -131,11 +155,11 @@ export const login = async (req, res) => {
         email: user.email,
         phone: user.phone,
         company: user.company,
-        // verificationCode,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Error logging in", error });
+    console.error("❌ Login Controller Error:", error.message);
+    res.status(500).json({ message: "Error logging in", error: error.message || error });
   }
 };
 
@@ -152,9 +176,13 @@ export const getLogin = async (req, res) => {
 };
 
 export const verifyOTP = async (req, res) => {
+  console.log("\n✅ ===== VERIFY OTP REQUEST =====");
+  console.log("   Identifier:", req.body?.identifier);
+  console.log("   OTP:", req.body?.otp);
   try {
     const { identifier, otp } = req.body;
     if (!identifier || !otp) {
+      console.log("❌ Missing identifier or OTP");
       return res.status(400).json({ message: "OTP is required" });
     }
     let user;
@@ -163,30 +191,31 @@ export const verifyOTP = async (req, res) => {
     } else {
       user = await User.findOne({ phone: identifier });
     }
-    // user not found
     if (!user) {
+      console.log("❌ User not found:", identifier);
       return res.status(404).json({ message: "User not found" });
     }
-    // otp expire
+    console.log("✅ User found:", user.name);
     if (!user.otpExpiresAt || user.otpExpiresAt < Date.now()) {
-      return res.status(400).json({
-        message: "OTP expired. Please request new OTP",
-      });
+      console.log("❌ OTP expired");
+      return res.status(400).json({ message: "OTP expired. Please request new OTP" });
     }
-    // otp verification
     if (user.verificationCode !== otp) {
+      console.log("❌ Wrong OTP — Expected:", user.verificationCode, "Got:", otp);
       return res.status(400).json({ message: "Invalid OTP" });
     }
     user.isVerified = true;
     user.verificationCode = null;
     user.otpExpiresAt = null;
     await user.save();
+    console.log("✅ OTP verified, user saved");
 
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES },
     );
+    console.log("✅ JWT token generated");
 
     res.status(200).json({
       message: "OTP verified successfully",
@@ -203,6 +232,7 @@ export const verifyOTP = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("❌ VerifyOTP Error:", error.message);
     res.status(500).json({ message: "Error verifying OTP", error });
   }
 };

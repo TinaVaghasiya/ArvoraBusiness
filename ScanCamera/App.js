@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import messaging from '@react-native-firebase/messaging';
+import messaging from './src/utils/firebaseMessaging';
 import Home from "./src/screens/Home";
 import OpeningScreen from "./src/screens/OpeningScreen";
 import OnboardScreen from "./src/screens/Onboardscreen";
@@ -77,66 +77,81 @@ export default function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const [authToken, hasLaunched] = await Promise.all([
-        AsyncStorage.getItem("authToken"),
-        AsyncStorage.getItem("hasLaunched"),
-      ]);
-      console.log("authToken from storage:", authToken);
-      if (!hasLaunched) await AsyncStorage.setItem("hasLaunched", "true");
-      setDestination(authToken ? "MainTabs" : "LoginScreen");
-      
-      if (authToken) {
-        registerForPushNotifications();
+      try {
+        const [authToken, hasLaunched] = await Promise.all([
+          AsyncStorage.getItem("authToken"),
+          AsyncStorage.getItem("hasLaunched"),
+        ]);
+        console.log("authToken from storage:", authToken);
+        if (!hasLaunched) await AsyncStorage.setItem("hasLaunched", "true");
+        setDestination(authToken ? "MainTabs" : "LoginScreen");
+        
+        if (authToken) {
+          registerForPushNotifications().catch(err => console.log('FCM register error:', err));
+        }
+      } catch (err) {
+        console.log("checkAuth error:", err);
+        setDestination("LoginScreen");
       }
     };
     checkAuth();
 
-    // Handle foreground notifications with Firebase
-    const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
-      console.log('📬 FCM Notification received in foreground:', remoteMessage);
-      console.log('📬 Title:', remoteMessage.notification?.title);
-      console.log('📬 Body:', remoteMessage.notification?.body);
-      console.log('📬 Data:', remoteMessage.data);
-      
-      const popupData = {
-        visible: true,
-        notification: {
-          title: remoteMessage.notification?.title || 'Notification',
-          message: remoteMessage.notification?.body || 'You have a new notification',
-          type: remoteMessage.data?.type || 'system',
-        },
-      };
-      
-      console.log('🎯 Setting popup data:', popupData);
-      setNotificationPopup(popupData);
-      
-      // Emit event to refresh badge count immediately
-      notificationEmitter.emit('newNotification');
-    });
+    let unsubscribeForeground = null;
+    let unsubscribeNotificationOpen = null;
 
-    // Handle notification tap (background/quit state)
-    const unsubscribeNotificationOpen = messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log('Notification tapped (background):', remoteMessage);
-      if (navigationRef.current) {
-        navigationRef.current.navigate('NotificationScreen');
-      }
-    });
+    try {
+      if (typeof messaging === 'function') {
+        // Handle foreground notifications with Firebase
+        unsubscribeForeground = messaging().onMessage(async remoteMessage => {
+          console.log('📬 FCM Notification received in foreground:', remoteMessage);
+          console.log('📬 Title:', remoteMessage.notification?.title);
+          console.log('📬 Body:', remoteMessage.notification?.body);
+          console.log('📬 Data:', remoteMessage.data);
+          
+          const popupData = {
+            visible: true,
+            notification: {
+              title: remoteMessage.notification?.title || 'Notification',
+              message: remoteMessage.notification?.body || 'You have a new notification',
+              type: remoteMessage.data?.type || 'system',
+            },
+          };
+          
+          console.log('🎯 Setting popup data:', popupData);
+          setNotificationPopup(popupData);
+          
+          // Emit event to refresh badge count immediately
+          notificationEmitter.emit('newNotification');
+        });
 
-    // Check if app was opened from notification (quit state)
-    messaging()
-      .getInitialNotification()
-      .then(remoteMessage => {
-        if (remoteMessage) {
-          console.log('Notification opened app from quit state:', remoteMessage);
+        // Handle notification tap (background/quit state)
+        unsubscribeNotificationOpen = messaging().onNotificationOpenedApp(remoteMessage => {
+          console.log('Notification tapped (background):', remoteMessage);
           if (navigationRef.current) {
             navigationRef.current.navigate('NotificationScreen');
           }
-        }
-      });
+        });
+
+        // Check if app was opened from notification (quit state)
+        messaging()
+          .getInitialNotification()
+          .then(remoteMessage => {
+            if (remoteMessage) {
+              console.log('Notification opened app from quit state:', remoteMessage);
+              if (navigationRef.current) {
+                navigationRef.current.navigate('NotificationScreen');
+              }
+            }
+          })
+          .catch(e => console.log('Firebase initial notification error:', e));
+      }
+    } catch (firebaseErr) {
+      console.log('Firebase messaging not initialized (Development/Expo Go mode):', firebaseErr.message);
+    }
 
     return () => {
-      unsubscribeForeground();
-      unsubscribeNotificationOpen();
+      if (typeof unsubscribeForeground === 'function') unsubscribeForeground();
+      if (typeof unsubscribeNotificationOpen === 'function') unsubscribeNotificationOpen();
     };
   }, []);
 

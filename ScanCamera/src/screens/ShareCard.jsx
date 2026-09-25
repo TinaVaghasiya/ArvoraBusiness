@@ -10,8 +10,8 @@ import {
     Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Share from "react-native-share";
-import RNFS from 'react-native-fs';
+import Share from "../utils/shareSafe";
+import RNFS from "../utils/fsSafe";
 import { BASE_API } from "../utils/api";
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Ionicons } from "@expo/vector-icons";

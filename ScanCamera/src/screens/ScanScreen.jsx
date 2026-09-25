@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Alert, Modal, Text, StyleSheet } from "react-native";
-import DocumentScanner from "react-native-document-scanner-plugin";
+import DocumentScanner from "../utils/documentScannerSafe";
 import * as Progress from "react-native-progress";
 import {OCR_API} from "../utils/api";
 

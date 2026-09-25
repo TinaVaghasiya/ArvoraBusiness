@@ -70,6 +70,7 @@ export default function LoginScreen() {
       navigation.replace("OtpScreen", {
         identifier: identifier.trim(),
         user: data.user,
+        source: "login",
       });
     } catch (error) {
       console.error("Error logging in:", error);

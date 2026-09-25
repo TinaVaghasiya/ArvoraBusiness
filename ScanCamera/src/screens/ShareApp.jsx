@@ -3,8 +3,8 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Alert } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons, FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
-import Share from "react-native-share";
-import Clipboard from '@react-native-clipboard/clipboard';
+import Share from "../utils/shareSafe";
+import Clipboard from "../utils/clipboardSafe";
 import { Linking } from 'react-native';
 
 export default function ShareApp() {
