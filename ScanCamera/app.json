@@ -15,11 +15,18 @@
     },
     "ios": {
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "updates": {
       "enabled": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "864f10d1-ce17-44c0-9872-0f5063340884"
+      }
     }
   }
 }

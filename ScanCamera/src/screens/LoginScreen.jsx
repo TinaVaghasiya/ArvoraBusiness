@@ -1,22 +1,22 @@
-import React, {useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   Image,
-
+  Dimensions,
+  Keyboard,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "@expo/vector-icons/Entypo";
 import Fontisto from "@expo/vector-icons/Fontisto";
-import {BASE_API} from "../utils/api";
+import { BASE_API } from "../utils/api";
 import { Dialog, Portal, Button } from "react-native-paper";
 import { validateEmail, validatePhone } from "../utils/validation";
+
+const { height } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState("");
@@ -25,40 +25,33 @@ export default function LoginScreen() {
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const navigation = useNavigation();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const handleSend = async () => {
-    // Clear previous errors
     setError("");
-    
     if (!identifier || !identifier.trim()) {
       setError("Please enter your email or phone number");
       return;
     }
-
-    // Check if it's email or phone
     const isEmail = identifier.includes("@");
-    
     if (isEmail) {
       const emailValidation = validateEmail(identifier);
-      if (!emailValidation.isValid) {
-        setError(emailValidation.error);
-        return;
-      }
+      if (!emailValidation.isValid) { setError(emailValidation.error); return; }
     } else {
       const phoneValidation = validatePhone(identifier);
-      if (!phoneValidation.isValid) {
-        setError(phoneValidation.error);
-        return;
-      }
+      if (!phoneValidation.isValid) { setError(phoneValidation.error); return; }
     }
-
     try {
       setLoading(true);
       const response = await fetch(`${BASE_API}/api/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: identifier.trim() }),
       });
       const data = await response.json();
@@ -82,97 +75,80 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : null}
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      {/* Top Header */}
       <View style={styles.topHeader}>
         <View style={styles.iconCircle}>
           <Entypo name="login" size={35} color="white" />
         </View>
-
         <Text style={styles.headerTitle}>Turn Every Business Card into a</Text>
-
         <Text style={styles.headerTitleBold}>Smart Searchable Contact</Text>
       </View>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>Login with </Text>
+
+      {/* Form - middle section */}
+      <View style={styles.formWrapper}>
+        <Text style={styles.subtitle}>Login with</Text>
+        <View style={styles.inputContainer}>
+          <Fontisto name="email" size={20} color="#606064" />
+          <TextInput
+            placeholder="Email or Phone Number"
+            placeholderTextColor="#999"
+            value={identifier}
+            onChangeText={setIdentifier}
+            style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
         </View>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.5 }]}
+          onPress={handleSend}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? "Sending..." : "Send OTP"}</Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            <Fontisto
-              name="email"
-              size={20}
-              color="#606064"
-              style={{ marginRight: 4 }}
-            />
-
-            <TextInput
-              placeholder="Email or Phone Number"
-              placeholderTextColor="#999"
-              value={identifier}
-              onChangeText={setIdentifier}
-              style={styles.input}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-          {error ? <Text style={{ color: "red",fontSize: 13, textAlign: "start", marginTop: 10 }}>{error}</Text> : null}
-
-          <TouchableOpacity style={[styles.button, loading && { opacity: 0.5, backgroundColor: "#1E3A8A" }]} onPress={handleSend} disabled={loading}>
-            <Text style={styles.buttonText}>{loading ? "Sending..." : "Send OTP"}</Text>
+      {/* Bottom - hidden when keyboard is open */}
+      {!keyboardVisible && <View style={styles.bottomWrapper} pointerEvents="box-none">
+        <View style={styles.curve} />
+        <Image
+          source={require("../../assets/sitted.png")}
+          style={styles.bottomImage}
+          resizeMode="contain"
+        />
+        <View style={styles.bottomSection}>
+          <Text style={styles.bottomText}>Don't have an Account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")}>
+            <Text style={styles.bottomTextSign}>Sign Up</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.background}></View>
-        <View style={styles.bottomWrapper}>
-          <View style={styles.curve} />
+      </View>}
 
-          <Image
-            source={require("../../assets/sitted.png")}
-            style={styles.bottomImage}
-            resizeMode="contain"
-          />
-
-          <View style={styles.bottomSection}>
-            <Text style={styles.bottomText}>Don’t have an Account? </Text>
-            <TouchableOpacity
-              style={{ fontWeight: "bold" }}
-              onPress={() => navigation.navigate("RegisterScreen")}
-            >
-              <Text style={styles.bottomTextSign}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <Portal>
-          <Dialog
-            visible={dialogVisible}
-            onDismiss={() => setDialogVisible(false)}
-          >
-            <Dialog.Title>Login Failed</Dialog.Title>
-            <Dialog.Content>
-              <Text style={{ color: "#6B7280" }}>{dialogMessage}</Text>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Button onPress={() => setDialogVisible(false)}>OK</Button>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      <Portal>
+        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
+          <Dialog.Title>Login Failed</Dialog.Title>
+          <Dialog.Content>
+            <Text style={{ color: "#6B7280" }}>{dialogMessage}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDialogVisible(false)}>OK</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: "#f9f7f7",
-    alignItems: "center",
+    backgroundColor: "#fff",
   },
   topHeader: {
     width: "100%",
-    height: 280,
+    height: height * 0.35,
     backgroundColor: "#1E3A8A",
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
@@ -183,7 +159,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-
   iconCircle: {
     backgroundColor: "#4A61A1",
     width: 80,
@@ -195,13 +170,11 @@ const styles = StyleSheet.create({
     marginTop: 30,
     elevation: 5,
   },
-
   headerTitle: {
     color: "#fff",
     fontSize: 18,
     textAlign: "center",
   },
-
   headerTitleBold: {
     color: "#fff",
     fontSize: 20,
@@ -209,30 +182,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 5,
   },
-  subtitleContainer: {
-    flex: 1,
-    textAlign: "center",
+  formWrapper: {
+    alignItems: "center",
+    paddingHorizontal: 30,
+    paddingTop: 30,
   },
-
   subtitle: {
     fontSize: 24,
     textAlign: "center",
     color: "#000",
     fontWeight: "bold",
-    marginTop: 5,
+    marginBottom: 20,
   },
-  background: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  formContainer: {
-    width: "85%",
-    alignItems: "center",
-    marginBottom: 180,
-  },
-
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -247,6 +208,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#000",
     marginLeft: 10,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 13,
+    alignSelf: "flex-start",
+    marginTop: 8,
+    marginLeft: 12,
   },
   button: {
     backgroundColor: "#1B347C",
@@ -268,33 +236,30 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: 100,
+    height: height * 0.32,
     alignItems: "center",
   },
-
   curve: {
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: 170,
+    height: "100%",
     backgroundColor: "#E5E6F3",
     borderTopLeftRadius: 140,
     borderTopRightRadius: 120,
   },
-
   bottomImage: {
     width: 300,
-    height: 205,
+    height: height * 0.25,
     position: "absolute",
-    bottom: 80,
+    bottom: 45,
     marginLeft: 40,
   },
   bottomSection: {
     flexDirection: "row",
     alignItems: "center",
     position: "absolute",
-    bottom: 60,
-    marginLeft: 20,
+    bottom: 18,
   },
   bottomText: {
     fontSize: 14,
